@@ -1,10 +1,12 @@
 from ligand_utility import get_ligand_sdf, get_protein_pdb, mol_to_smiles, protein_ligand_csv
 import pandas as pd
+import sys
 
-dataset = '/Users/mleemann/Documents/test_data/df_entry_ligand_pocket_edia_10.csv'
+dataset = sys.argv[1]
+output_folder = sys.argv[2]
 
 df = pd.read_csv(dataset)
-output_folder = '/Users/mleemann/Documents/test_data/test_output'
+
 
 for row in range(len(df.index)):
 
