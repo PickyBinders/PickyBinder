@@ -1,14 +1,16 @@
 from spyrmsd import io, rmsd
-import os, glob
+import os 
+import glob
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 
 # paths to the relevant data
-ref_data = "/Users/mleemann/Documents/test_data/test_output/"
-diffdock_allData = "/Users/mleemann/Documents/tools/DiffDock/results/predictions/"
-scoring_output = "/Users/mleemann/Documents/test_data/scoring_output/"
+ref_data = sys.argv[1]
+diffdock_allData = sys.argv[2]
+scoring_output = sys.argv[3]
 
 # get all prediction folders
 diffdock_predictions = [d for d in glob.glob(diffdock_allData + '/*/')]
@@ -34,7 +36,7 @@ for result in diffdock_predictions:
     for ligand in ligands:
         diffdock_path = os.path.join(result, ligand)
 
-        ref = io.loadmol(ref_data + ref_mol)
+        ref = io.loadmol(ref_data + '/' + ref_mol)
         ref.strip()
 
         diffdock = io.loadmol(diffdock_path)
@@ -70,7 +72,7 @@ for result in diffdock_predictions:
     diffdock_table = diffdock_table.iloc[1:, :]
 
     # save table as csv file
-    diffdock_table.to_csv(scoring_output + ref_mol.split('.')[0] + '.csv', index=False)
+    diffdock_table.to_csv(scoring_output + '/' + ref_mol.split('.')[0] + '.csv', index=False)
 
     """add sucess rate"""
     # add columns for success interpretation
@@ -99,7 +101,7 @@ for result in diffdock_predictions:
     plt.tick_params(axis='x', labelrotation=90)
     plt.legend(loc='upper center', ncol=2, shadow=True)
     plt.title('RMSD of DiffDock against experimental data for ' + ref_mol.split('.')[0])
-    plt.savefig(scoring_output + ref_mol.split('.')[0] + '_RMSD.png')
+    plt.savefig(scoring_output + '/' + ref_mol.split('.')[0] + '_RMSD.png')
     plt.close()
 
     # Performance overview
@@ -108,18 +110,18 @@ for result in diffdock_predictions:
              color='grey')
     plt.legend(['RMDS[Å] < 2', 'RMDS[Å] > 2'], bbox_to_anchor=(0.75, 0.5), ncol=2)
     plt.title('Perfomrance of Diffdock for ' + ref_mol.split('.')[0])
-    plt.savefig(scoring_output + ref_mol.split('.')[0] + '_performance.png')
+    plt.savefig(scoring_output + '/' + ref_mol.split('.')[0] + '_performance.png')
     plt.close()
 
 """create summary table for all molecules"""
 
-csv_tables = '/Users/mleemann/Documents/test_data/scoring_output/'
+csv_tables = scoring_output
 
 summary_table = pd.DataFrame(
     columns=['Molecule', 'DiffDock rank1 RMSD', 'Diffdock best RMSD', 'Diffdock best RMSD rank'])
 
 # get the paths of the csv files
-files = [f for f in glob.glob(csv_tables + "*.csv")]
+files = [f for f in glob.glob(csv_tables + '/' + "*.csv")]
 
 for table in files:
     df = pd.read_csv(table)
@@ -143,4 +145,4 @@ for table in files:
     print(summary_table)
 
 # save summary table as csv
-summary_table.to_csv(scoring_output + 'summary_table.csv', index=False)
+summary_table.to_csv(scoring_output + '/' + 'summary_table.csv', index=False)
