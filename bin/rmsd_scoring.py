@@ -115,13 +115,15 @@ for result in diffdock_predictions:
 
 """create summary table for all molecules"""
 
-csv_tables = scoring_output
+csv_tables = sys.argv[3]
 
 summary_table = pd.DataFrame(
     columns=['Molecule', 'DiffDock rank1 RMSD', 'Diffdock best RMSD', 'Diffdock best RMSD rank'])
 
 # get the paths of the csv files
 files = [f for f in glob.glob(csv_tables + '/' + "*.csv")]
+if csv_tables + '/' +'summary_table.csv' in files:
+    files.remove(csv_tables + '/' + 'summary_table.csv')
 
 for table in files:
     df = pd.read_csv(table)
@@ -142,7 +144,6 @@ for table in files:
     summary.loc[0, 'Diffdock best RMSD rank'] = best_rank
 
     summary_table = pd.concat([summary_table, summary])
-    print(summary_table)
 
 # save summary table as csv
 summary_table.to_csv(scoring_output + '/' + 'summary_table.csv', index=False)
