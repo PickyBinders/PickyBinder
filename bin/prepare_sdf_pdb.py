@@ -7,7 +7,6 @@ output_folder = sys.argv[2]
 
 df = pd.read_csv(dataset)
 
-
 for row in range(len(df.index)):
 
     get_ligand_sdf(df.loc[df.index[row]], output_folder)
