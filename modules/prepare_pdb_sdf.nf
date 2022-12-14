@@ -19,6 +19,6 @@ process prepare_pdb_sdf {
     """
     mkdir -p ${params.pdb_sdf_dir}
     
-    prepare_sdf_pdf.py ${dataset} ${params.pdb_sdf_dir}
+    prepare_pdb_sdf.py ${dataset} ${params.pdb_sdf_dir}
     """
 }
