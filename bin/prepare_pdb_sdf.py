@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from ligand_utility import get_ligand_sdf, get_protein_pdb, mol_to_smiles, protein_ligand_csv
 import pandas as pd
 import sys
