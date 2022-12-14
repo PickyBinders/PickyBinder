@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from spyrmsd import io, rmsd
 import os 
 import glob
