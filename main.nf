@@ -17,12 +17,16 @@ DTBW  ~  version ${workflow.manifest.version}
 * check the input type and create relevant channels
 */
 
-
+Channel
+    .fromPath("${params.dataset}, checkIfExists: true, type: 'file')
+    .ifEmpty { error "Cannot find the dataset file" }
+    .set { dataset }
 
 /*
 * include the modules
 */
 
+include { prepare_pdb_sdf } from "./modules/prepare_pdb_sdf"
 
 
 /*
@@ -30,5 +34,7 @@ DTBW  ~  version ${workflow.manifest.version}
 */
 
 workflow {
+
+pdb_sdf_files = prepare_pdb_sdf(dataset)
 
 }
