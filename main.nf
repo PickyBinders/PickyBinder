@@ -18,7 +18,7 @@ DTBW  ~  version ${workflow.manifest.version}
 */
 
 Channel
-    .fromPath("${params.dataset})
+    .value("${params.dataset})
     .set { dataset }
 
 /*
