@@ -18,8 +18,7 @@ DTBW  ~  version ${workflow.manifest.version}
 */
 
 Channel
-    .fromPath("${params.dataset}, checkIfExists: true, type: 'file')
-    .ifEmpty { error "Cannot find the dataset file" }
+    .fromPath("${params.dataset})
     .set { dataset }
 
 /*
