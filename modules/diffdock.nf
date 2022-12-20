@@ -24,6 +24,8 @@ process diffdock {
     ln -s ${params.diffdock_location}/* .
     ln -s ${params.pdb_sdf_files} .
     
+    shopt -u extglob
+    
     python datasets/esm_embedding_preparation.py --protein_ligand_csv ${protein_ligand_csv} --out_file data/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     
@@ -64,7 +66,8 @@ process diffdock_single {
     tuple val (sample_name), path (protein_ligand_csv)
 
     output:
-    path ("${sample_name}/"), emit: diffdock_predictions
+    path ("${sample_name}/index*"), emit: predictions
+    path ("${sample_name}/*.npy"), emit: stats
 
     script:
     """
@@ -72,6 +75,7 @@ process diffdock_single {
     
     shopt -s extglob
     ln -s ${params.diffdock_location}/* .
+    shopt -u extglob
     
     python datasets/esm_embedding_preparation.py --protein_ligand_csv ${protein_ligand_csv} --out_file data/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
