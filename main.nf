@@ -50,10 +50,14 @@ include { rmsd } from "./modules/scoring"
 workflow {
 
     //pdb_sdf_files = prepare_pdb_sdf(dataset)
-    diffdock_input_csv = create_csv(sdf_files)
-    diffdock_predictions = diffdock_single(diffdock_input_csv)
     //diffdock_predictions = diffdock(pdb_sdf_files.protein_ligand_csv)
     //diffdock_predictions = diffdock(protein_ligand_csv)
     //rmsd_out = rmsd(diffdock_predictions)
+    
+    // singles samples
+    diffdock_input_csv = create_csv(sdf_files)
+    diffdock_predictions = diffdock_single(diffdock_input_csv)
+    rmsd_out = rmsd(diffdock_predictions.predictions.collect())
+    
 
 }
