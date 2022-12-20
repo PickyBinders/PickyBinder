@@ -74,7 +74,7 @@ for result in diffdock_predictions:
     diffdock_table = diffdock_table.iloc[1:, :]
 
     # save table as csv file
-    diffdock_table.to_csv(scoring_output + '/' + ref_mol.split('.')[0] + '.csv', index=False)
+    diffdock_table.to_csv(scoring_output + '/' + ref_mol.split('.')[0] + '_RMSD.csv', index=False)
 
     """add sucess rate"""
     # add columns for success interpretation
