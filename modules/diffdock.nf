@@ -11,6 +11,7 @@ process diffdock {
 
     input:
     path (protein_ligand_csv)
+    path (diffd_tool)
 
     output:
     path ("diffdock_predictions/"), emit: diffdock_predictions
@@ -20,7 +21,6 @@ process diffdock {
     #!/bin/bash
     
     shopt -s extglob
-    ln -s ${params.diffdock_location}/* .
     ln -s ${params.pdb_sdf_files} .
     shopt -u extglob
     
@@ -64,6 +64,7 @@ process diffdock_single {
 
     input:
     tuple val (sample_name), path (protein_ligand_csv)
+    path (diffd_tool)
 
     output:
     path ("${sample_name}/index*"), emit: predictions
@@ -71,12 +72,6 @@ process diffdock_single {
 
     script:
     """
-    #!/bin/bash
-    
-    shopt -s extglob
-    ln -s ${params.diffdock_location}/* .
-    shopt -u extglob
-    
     mkdir data_local
     
     python datasets/esm_embedding_preparation.py --protein_ligand_csv ${protein_ligand_csv} --out_file data_local/prepared_for_esm.fasta
