@@ -33,6 +33,10 @@ Channel
     .fromPath("${params.pdb_sdf_files}/*.sdf")
     .map { file -> tuple(file.simpleName, file) }
     .set { sdf_files }
+
+Channel
+    .fromPath("${params.pdb_sdf_files}/")
+    .set { pdb_sdf_files }
     
 Channel
     .fromPath("${params.diffdock_location}/*", type: 'any')
@@ -55,11 +59,11 @@ workflow {
 
     //pdb_sdf_files = prepare_pdb_sdf(dataset)
     //diffdock_predictions = diffdock(pdb_sdf_files.protein_ligand_csv)
-    //diffdock_predictions = diffdock(protein_ligand_csv, diffd_tool.collect())
-    //rmsd_out = rmsd(diffdock_predictions)
+    diffdock_predictions = diffdock(protein_ligand_csv, pdb_sdf_files, diffd_tool.collect())
+    rmsd_out = rmsd(diffdock_predictions)
     
     // singles samples
-    diffdock_predictions = diffdock_single(sdf_files, diffd_tool.collect())
-    rmsd_out = rmsd(diffdock_predictions.predictions.collect())
+    //diffdock_predictions = diffdock_single(sdf_files, diffd_tool.collect())
+    //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
 
 }
