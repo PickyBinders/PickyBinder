@@ -44,7 +44,7 @@ Channel
 */
 
 include { prepare_pdb_sdf } from "./modules/prepare_pdb_sdf"
-include { diffdock; create_csv; diffdock_single } from "./modules/diffdock"
+include { diffdock; diffdock_single } from "./modules/diffdock"
 include { rmsd } from "./modules/scoring"
 
 /*
@@ -59,8 +59,7 @@ workflow {
     //rmsd_out = rmsd(diffdock_predictions)
     
     // singles samples
-    diffdock_input_csv = create_csv(sdf_files)
-    diffdock_predictions = diffdock_single(diffdock_input_csv, diffd_tool.collect())
+    diffdock_predictions = diffdock_single(sdf_files, diffd_tool.collect())
     rmsd_out = rmsd(diffdock_predictions.predictions.collect())
 
 }
