@@ -2,10 +2,11 @@
 *  diffdock module
 */
 
-params.OUTPUT = "$launchDir"
+params.OUTPUT = "$launchDir/diffdock"
 
 process diffdock {
-    publishDir(params.OUTPUT, mode: 'copy')
+    publishDir(params.OUTPUT, mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "diffdock.log"})
+    publishDir(params.OUTPUT, mode: 'copy', pattern: "diffdock_predictions") 
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock'
     label 'diffdock'
 
@@ -16,6 +17,7 @@ process diffdock {
 
     output:
     path ("diffdock_predictions/"), emit: diffdock_predictions
+    path (".command.log"), emit: diffdock_log
 
     script:
     """
