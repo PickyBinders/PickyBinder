@@ -106,7 +106,7 @@ def pdb_ligand_to_sdf(pdb_file, template_smiles, output_sdf_file):
 
 def protein_ligand_csv(row, output_folder):
     """
-    add path of sdf and pdb file to a csv file
+    add path of pdb and sdf file to csv file
     """
     pdb_chain, ligand_resnum = row.PocketID.split(":")
     ligand_resnum = ligand_resnum.replace(".", "_")
@@ -124,3 +124,21 @@ def protein_ligand_csv(row, output_folder):
         writer = csv.writer(f)
         row_content = [pdb_file, sdf_file]
         writer.writerow(row_content)
+        
+
+def ref_ligand_to_input_ligand(ref_sdf, ligand_sdf):
+    """
+    Convert an SDF file to a SMILES string and 
+    convert the SMILES representation back to 3D molecule and write as SDF file
+    """
+    if not ligand_sdf.exists():
+        smiles = mol_to_smiles(ref_sdf)
+        smiles_to_3d_mol(smiles, ligand_sdf)
+    
+    
+    
+    
+    
+    
+    
+    

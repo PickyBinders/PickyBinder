@@ -1,10 +1,10 @@
 /*
-*  prepare_pdb_sdf module 
+*  prepare_reference_files module 
 */
 
-params.OUTPUT = "$launchDir"
+params.OUTPUT = "$launchDir/data"
 
-process prepare_pdb_sdf {
+process prepare_reference_files {
     publishDir(params.OUTPUT, mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
 
@@ -20,6 +20,6 @@ process prepare_pdb_sdf {
     """
     mkdir -p ${params.pdb_sdf_dir}
     
-    prepare_pdb_sdf.py ${dataset} ${params.pdb_sdf_dir}
+    prepare_reference_files.py ${dataset} ${params.pdb_sdf_dir}
     """
 }
