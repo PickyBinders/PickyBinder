@@ -124,21 +124,25 @@ def protein_ligand_csv(row, output_folder):
         writer = csv.writer(f)
         row_content = [pdb_file, sdf_file]
         writer.writerow(row_content)
-        
 
-def ref_ligand_to_input_ligand(ref_sdf, ligand_sdf):
+
+def diffdock_csv(ref_sdf_file):
     """
-    Convert an SDF file to a SMILES string and 
-    convert the SMILES representation back to 3D molecule and write as SDF file
+    add path of pdb and sdf file to csv file
     """
-    if not ligand_sdf.exists():
-        smiles = mol_to_smiles(ref_sdf)
-        smiles_to_3d_mol(smiles, ligand_sdf)
-    
-    
-    
-    
-    
-    
-    
+    pdb_chain, ligand_resnum = ref_sdf_file.split("__")
+    sdf_file = Path() / f"{ligand_resnum}"
+    pdb_file = Path() / f"{pdb_chain}.pdb"
+    protein_ligand_file = Path() / "protein_ligand.csv"
+
+    if not protein_ligand_file.exists():
+        with open(protein_ligand_file, 'w+') as c:
+            writer = csv.writer(c)
+            first_row = ['protein_path', 'ligand']
+            writer.writerow(first_row)
+
+    with open(protein_ligand_file, 'a') as f:
+        writer = csv.writer(f)
+        row_content = [pdb_file, sdf_file]
+        writer.writerow(row_content)
     

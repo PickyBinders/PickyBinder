@@ -12,7 +12,7 @@ process prepare_ligand_sdf {
     path (ref_sdf_files)
 
     output:
-    path ("*.sdf"), emit: sdf_files
+    path ("*_*.sdf"), emit: sdf_files
 
     script:
     """
