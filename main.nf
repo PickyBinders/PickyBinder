@@ -36,6 +36,18 @@ Channel
 Channel
     .fromPath("${params.diffdock_location}/*", type: 'any')
     .set { diffd_tool }
+
+Channel
+    .fromPath("${params.pdb_sdf_files}/*.sdf")
+    .map { [it.baseName.toString().split("__")[1], it.simpleName, it.baseName.toString().split("__")[0]] }
+    .set { identifiers }
+
+Channel
+    .fromPath("${params.pdb_sdf_files}/*.pdb")
+    .map { file -> tuple(file.simpleName, file) }
+    .filter{!(it[0] =~ /_/)}
+    .flatten().filter{it =~ /\//}
+    .set { molecules }
     
 
 // above tested ok
@@ -108,6 +120,13 @@ workflow {
     /* 
     * docking using Vina
     */
+    
+    preped_ligands = vina_prepare_ligand(identifiers, sdf_for_docking, receptors)
+    preped_receptors = vina_prepare_receptor(preped_ligands)
+    
+    vina_input = vina_box(preped_receptors, molecules.collect())
+    vina_out = vina(vina_input.pdbqtFiles_box)
+    vina_sdf = vina_pdbtqToSdf(vina_out.vina_result)
     
     //preped_ligands = vina_prepare_ligand(ligands, receptors)
     //preped_receptors = vina_prepare_receptor(preped_ligands)
