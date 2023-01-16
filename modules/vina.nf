@@ -97,12 +97,15 @@ process vina_pdbtqToSdf {
     tuple val (rec_lig), val (recep_chain), path (vina_pdbqt)
     
     output:
-    tuple val (rec_lig), val (recep_chain), path ("${rec_lig}_vina.sdf")
+    tuple val (rec_lig), val (recep_chain), path ("${rec_lig}_vina*.sdf")
     
-    script:
-    """
-    mk_export.py ${vina_pdbqt} -o ${rec_lig}_vina.sdf
-    """
+    shell:
+    '''
+    mk_export.py !{vina_pdbqt} -o !{rec_lig}_vina.sdf
+    
+    csplit --prefix="!{rec_lig}_vina_" --suffix-format="%d.sdf"  <(echo "\\$\\$\\$\\$"; cat !{rec_lig}_vina.sdf) '/$$$$/+1' "{*}"
+    for line in !{rec_lig}_vina_*; do if test $(wc -l < $line) -eq 1; then rm $line; fi; done
+    '''
 }
 
 
@@ -115,6 +118,28 @@ process vina_pdbtqToSdf {
 *    for i, pose in enumerate(pdbqt_mol):
 *        rdkit_mol = pose.export_rdkit_mol()
 *        affinity = pose.score
-*        with Chem.SDWriter(f"${rec_lig}_vina.sdf") as w:
+*        with Chem.SDWriter(f"${rec_lig}_vina_{i}.sdf") as w:
 *            w.write(rdkit_mol)
 */
+
+
+process vina_all {
+    publishDir(params.OUTPUT, mode: 'copy')
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina_meeko'
+    tag { rec_lig }
+    
+    input:
+    tuple val (rec_lig), path (ligand_pdbqt), val (recep_chain), path (receptor_pdbqt)
+    path (receptors)
+    
+    output:
+    tuple val (rec_lig), val (recep_chain), path ("${rec_lig}_*.sdf"), emit: vina_result
+    
+    script:
+    """
+    run_vina.py ${recep_chain} ${rec_lig} ${receptor_pdbqt} ${ligand_pdbqt}
+    """
+
+}
+
+
