@@ -99,13 +99,13 @@ process vina_pdbtqToSdf {
     output:
     tuple val (rec_lig), val (recep_chain), path ("${rec_lig}_vina*.sdf")
     
-    shell:
-    '''
-    mk_export.py !{vina_pdbqt} -o !{rec_lig}_vina.sdf
-    
-    csplit --prefix="!{rec_lig}_vina_" --suffix-format="%d.sdf"  <(echo "\\$\\$\\$\\$"; cat !{rec_lig}_vina.sdf) '/$$$$/+1' "{*}"
-    for line in !{rec_lig}_vina_*; do if test $(wc -l < $line) -eq 1; then rm $line; fi; done
-    '''
+    script:
+    """
+    csplit --elide-empty-files --prefix="${rec_lig}_vina_" --suffix-format="%d.pdbqt"  <(echo "ENDMDL"; cat ${vina_pdbqt}) '/ENDMDL/+1' "{*}"
+    for line in ${rec_lig}_vina_*; do if test \$(wc -l < \$line) -eq 1; then rm \$line; fi; done
+     
+    for file in ${rec_lig}_vina_*.pdbqt; do mk_export.py \${file} -o \${file%.pdbqt}.sdf; done
+    """
 }
 
 
