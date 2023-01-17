@@ -66,7 +66,7 @@ process vina_box {
 
 
 process vina {
-    publishDir(params.OUTPUT, mode: 'copy')
+    publishDir("$launchDir/vina/vina_predictions/${rec_lig}", mode: 'copy')
     //container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/AutoDockVina.img' 
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina'
     tag { rec_lig }
@@ -89,7 +89,7 @@ process vina {
 
 
 process vina_pdbtqToSdf {
-    publishDir(params.OUTPUT, mode: 'copy')
+    publishDir("$launchDir/vina/vina_predictions/${rec_lig}", mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/meeko'
     tag { rec_lig }
     
@@ -143,3 +143,77 @@ process vina_all {
 }
 
 
+process vina_prepare_ligand2 {
+    publishDir("$launchDir/vina/prepared_ligands", mode: 'copy', pattern: "*.pdbqt")
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/meeko'
+    
+    input:
+    path (sdf_files)
+    
+    output:
+    path ("*.pdbqt"), emit: preped_ligand
+    
+    script:
+    """
+    for file in *.sdf; do mk_prepare_ligand.py -i \${file} -o \${file%.sdf}.pdbqt; done
+    """
+}
+
+
+process vina_prepare_receptor2 {
+    publishDir("$launchDir/vina/prepared_receptors", mode: 'copy')
+    container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img'
+
+    input:
+    path (receptor_pdb)
+    
+    output:
+    path ("*.pdbqt"), emit: preped_receptor
+    
+    script:
+    """
+    for file in *.pdb; do reduce \${file} > \${file%.pdb}_H.pdb; prepare_receptor -r \${file%.pdb}_H.pdb -o \${file%.pdb}.pdbqt; done
+    """
+}
+
+
+process vina_box2 {
+    publishDir("$launchDir/vina/box_files", mode: 'copy')
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
+    tag { receptor_chain }
+    
+    input:
+    tuple val (receptor_chain), path (receptor_pdbs)
+    path (molecules)
+
+    output:
+    path ("*_box.txt"), emit: pdbqtFiles_box
+    
+    script:
+    """
+    calculate_box_for_vina2.py ${receptor_chain} 
+    """
+}
+
+
+process vina2 {
+    publishDir("$launchDir/vina/vina_predictions/${complex}", mode: 'copy')
+    //container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/AutoDockVina.img' 
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina'
+    tag { complex }
+    
+    input:
+    tuple val (ligand), val (receptor_chain), val (complex), path (receptor_pdbqt), path (vina_box), path (ligand_pdbqt)
+    
+    output:
+    tuple val (complex), val (receptor_chain), path ("${complex}_vina.pdbqt"), emit: vina_result
+    path ("${complex}_vina.log"), emit: vina_log
+    
+    script:
+    """
+    ${params.vina_tool} --receptor ${receptor_pdbqt} --ligand ${ligand_pdbqt} \
+                 --config ${vina_box} \
+                 --exhaustiveness=32 --out ${complex}_vina.pdbqt \
+                 > ${complex}_vina.log
+    """
+}
