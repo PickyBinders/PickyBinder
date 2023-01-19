@@ -36,7 +36,7 @@ process diffdock {
     path (diffd_tool)
 
     output:
-    path ("diffdock_predictions/"), emit: diffdock_predictions
+    path ("diffdock_predictions/"), emit: predictions
     path (".command.log"), emit: diffdock_log
 
     script:
@@ -57,31 +57,29 @@ process diffdock_single {
     publishDir("diffdock_predictions", mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock'
     label 'diffdock'
-    tag { sample_name }
+    tag { complex }
 
     input:
-    tuple val (sample_name), path (sdf_file)
+    tuple val (ligand), val (receptor_chain), val (complex), path (pdb_file), path (sdf_file)
     path (diffd_tool)
 
     output:
-    path ("${sample_name}/index*"), emit: predictions
-    path ("${sample_name}/*.npy"), emit: stats
+    path ("${complex}/index*"), emit: predictions
+    path ("${complex}/*.npy"), emit: stats
 
     script:
     """
     # create protein_ligand file
-    pdb_name=\$(echo ${sample_name} | cut -d'_' -f1,2)
-    
-    echo "protein_path,ligand" > ${sample_name}_protein_ligand.csv; \
-    echo "${params.pdb_sdf_files}/\${pdb_name}.pdb,${params.pdb_sdf_files}/${sdf_file}" >> ${sample_name}_protein_ligand.csv
+    echo "protein_path,ligand" > ${complex}_protein_ligand.csv; \
+    echo "${pdb_file},${sdf_file}" >> ${complex}_protein_ligand.csv
     
     # diffdock inference
     mkdir data_local
     
-    python datasets/esm_embedding_preparation.py --protein_ligand_csv ${sample_name}_protein_ligand.csv --out_file data_local/prepared_for_esm.fasta
+    python datasets/esm_embedding_preparation.py --protein_ligand_csv ${complex}_protein_ligand.csv --out_file data_local/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     
-    python -m inference --protein_ligand_csv ${sample_name}_protein_ligand.csv --out_dir ${sample_name} \
+    python -m inference --protein_ligand_csv ${complex}_protein_ligand.csv --out_dir ${complex} \
        --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
     """
 }

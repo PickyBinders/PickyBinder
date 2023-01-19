@@ -39,46 +39,8 @@ Channel
 
 Channel
     .fromPath("${params.pdb_sdf_files}/*.sdf")
-    .map { [it.baseName.toString().split("__")[0], it.baseName.toString().split("__")[1].split("_")[0], it.simpleName] }
+    .map { [it.simpleName.split("__")[0], it.simpleName.split("__")[1].split("_")[0], it.simpleName] }
     .set { identifiers }
-
-Channel
-    .fromPath("${params.pdb_sdf_files}/*.pdb")
-    .map { file -> tuple(file.simpleName, file) }
-    .filter{!(it[0] =~ /_/)}
-    .flatten().filter{it =~ /\//}
-    .set { molecules }
-    
-
-// above tested ok
-//
-//Channel
-//    .value("${params.protein_ligand_csv}")
-//    .set { protein_ligand_csv }
-   
-//Channel
-//    .value("$PWD/diffdock_predictions")
-//    .set { diffdock_predictions }
-    
-//Channel
-//    .fromPath("${params.pdb_sdf_files}/*.sdf")
-//    .map { file -> tuple(file.simpleName, file) }
-//    .set { sdf_files }
-
-Channel
-    .fromPath("${params.pdb_sdf_files}/")
-    .set { pdb_sdf_files }
-    
-Channel
-    .fromPath("${params.pdb_sdf_files}/*.sdf")
-    .map { [it.simpleName, it.baseName.toString().split("__")[0], it] }
-    .set { ligands }
-    
-Channel
-    .value("${params.pdb_sdf_files}/")
-    //.fromPath("/scicore/home/schwede/leeman0000/projects/LIGATE/test_vina/data_tutorial/*.pdb")
-    //.map { file -> tuple(file.simpleName, file) }
-    .set { receptors }
 
     
 /*
@@ -112,10 +74,14 @@ workflow {
     diffd_csv = create_diffdock_csv(ref_sdf_files2.collect())
     diffdock_predictions = diffdock(diffd_csv, pdb_files.collect(), sdf_for_docking.collect(), diffd_tool.collect())
     
-    //rmsd_out = rmsd(diffdock_predictions)
+    //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
     
     // diffdock single samples
-    //diffdock_predictions = diffdock_single(sdf_files, diffd_tool.collect())
+    //ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+    //         .combine(pdb_files.map{file -> tuple(file.simpleName, file)}, by: 0)
+    //         .combine(sdf_for_docking.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
+    //         .set{ input_diffd_single }
+    //diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
     //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
     
     
