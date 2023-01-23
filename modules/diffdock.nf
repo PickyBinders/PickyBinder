@@ -47,7 +47,7 @@ process diffdock {
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     
     python -m inference --protein_ligand_csv ${protein_ligand_csv} --out_dir diffdock_predictions \
-       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise --keep_local_structures
     """
 }
 
@@ -80,6 +80,6 @@ process diffdock_single {
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     
     python -m inference --protein_ligand_csv ${complex}_protein_ligand.csv --out_dir ${complex} \
-       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise --keep_local_structures
     """
 }

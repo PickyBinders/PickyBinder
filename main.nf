@@ -75,17 +75,17 @@ workflow {
     * docking using Diffdock
     */
     
-    //diffd_csv = create_diffdock_csv(ref_sdf_files2.collect())
-    //diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.collect(), diffd_tool.collect())
+    diffd_csv = create_diffdock_csv(ref_sdf_files2.collect())
+    diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.collect(), diffd_tool.collect())
     
     //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
     
     // diffdock single samples
-    ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
-             .combine(pdb_Hs, by: 0)
-             .combine(sdf_for_docking.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
-             .set{ input_diffd_single }
-    diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+    //ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+    //         .combine(pdb_Hs, by: 0)
+    //         .combine(sdf_for_docking.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
+    //         .set{ input_diffd_single }
+    //diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
     //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
     
     
@@ -93,17 +93,17 @@ workflow {
     * docking using Vina
     */
     
-    //sdf_for_docking.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
-    //preped_ligands = vina_prepare_ligand2(ligand_only.collect())
-    //preped_receptors = vina_prepare_receptor2(pdb_Hs)
-    //vina_box_out = vina_box2(pdbs, pdb_files.filter{!(it.simpleName =~ /_/)}.collect())
+    sdf_for_docking.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
+    preped_ligands = vina_prepare_ligand2(ligand_only.collect())
+    preped_receptors = vina_prepare_receptor2(pdb_Hs)
+    vina_box_out = vina_box2(pdbs, pdb_files.filter{!(it.simpleName =~ /_/)}.collect())
 
-    //identifiers.combine(preped_receptors, by: 0)
-    //        .combine(vina_box_out, by: 0)
-    //        .combine(preped_ligands.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
-    //        .set {vina_input}
+    identifiers.combine(preped_receptors, by: 0)
+            .combine(vina_box_out, by: 0)
+            .combine(preped_ligands.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
+            .set {vina_input}
 
-    //vina_out = vina2(vina_input)
-    //vina_sdf = vina_pdbtqToSdf(vina_out.vina_result)
+    vina_out = vina2(vina_input)
+    vina_sdf = vina_pdbtqToSdf(vina_out.vina_result)
     
 }
