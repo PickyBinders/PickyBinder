@@ -163,16 +163,17 @@ process vina_prepare_ligand2 {
 process vina_prepare_receptor2 {
     publishDir("$launchDir/vina/prepared_receptors", mode: 'copy')
     container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img'
+    tag { receptor_chain }
 
     input:
-    path (receptor_pdb)
+    tuple val(receptor_chain), path (pdb_H_files)
     
     output:
-    path ("*.pdbqt"), emit: preped_receptor
+    tuple val(receptor_chain), path ("*.pdbqt"), emit: preped_receptor
     
     script:
     """
-    for file in *.pdb; do reduce \${file} > \${file%.pdb}_H.pdb; prepare_receptor -r \${file%.pdb}_H.pdb -o \${file%.pdb}.pdbqt; done
+    prepare_receptor -r ${pdb_H_files} -o ${receptor_chain}.pdbqt
     """
 }
 
@@ -187,7 +188,7 @@ process vina_box2 {
     path (molecules)
 
     output:
-    path ("*_box.txt"), emit: pdbqtFiles_box
+    tuple val (receptor_chain), path ("*_box.txt"), emit: pdbqtFiles_box
     
     script:
     """

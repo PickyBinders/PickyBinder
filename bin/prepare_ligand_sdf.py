@@ -15,11 +15,15 @@ for ref in ref_sdf_files:
   ligand_sdf = Path() / f"{ligand}"
   ligand_resnum_sdf = Path() / f"{ligand_resnum}"
   
-  if not ligand_sdf.exists():
+  try:
+    if not ligand_sdf.exists():
+      print(ligand)
       smiles = mol_to_smiles(ref)
       smiles_to_3d_mol(smiles, ligand)
       shutil.copy(ligand_sdf, ligand_resnum_sdf)
   
-  else:
+    else:
       shutil.copy(ligand_sdf, ligand_resnum_sdf)
     
+  except:
+    print(ligand, " :got an error")

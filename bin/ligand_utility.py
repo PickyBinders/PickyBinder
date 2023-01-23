@@ -132,7 +132,7 @@ def diffdock_csv(ref_sdf_file):
     """
     pdb_chain, ligand_resnum = ref_sdf_file.split("__")
     sdf_file = Path() / f"{ligand_resnum}"
-    pdb_file = Path() / f"{pdb_chain}.pdb"
+    pdb_file = Path() / f"{pdb_chain}_Hs.pdb"
     protein_ligand_file = Path() / "protein_ligand.csv"
 
     if not protein_ligand_file.exists():
