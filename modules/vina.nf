@@ -184,15 +184,14 @@ process vina_box2 {
     tag { receptor_chain }
     
     input:
-    tuple val (receptor_chain), path (receptor_pdbs)
-    path (molecules)
+    tuple val (receptor_chain), path (pdb_Hs)
 
     output:
-    tuple val (receptor_chain), path ("*_box.txt"), emit: pdbqtFiles_box
+    tuple val (receptor_chain), path ("*_box.txt"), emit: box
     
     script:
     """
-    calculate_box_for_vina2.py ${receptor_chain} 
+    calculate_box_for_vina2.py ${receptor_chain} ${pdb_Hs}
     """
 }
 

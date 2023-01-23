@@ -6,11 +6,9 @@ import numpy as np
 import sys
 
 receptor_chain = sys.argv[1]
+pdb_Hs = sys.argv[2]
  
-protein, prot_chain = receptor_chain.split('_')
-protein = protein.lower()
-
-atoms = pd.parsePDB(protein, chain=prot_chain)
+atoms = pd.parsePDB(pdb_Hs)
 center = pd.calcCenter(atoms).round(3)
 
 center_x = 'center_x = ' + str(center[0])
