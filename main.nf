@@ -50,9 +50,12 @@ Channel
 include { prepare_reference_files } from "./modules/prepare_reference_files"
 include { prepare_ligand_sdf } from "./modules/prepare_ligand_sdf"
 include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
+include { p2rank } from "./modules/p2rank"
+include { calculate_boxSize } from "./modules/calculate_boxSize"
+include { docking_box } from "./modules/docking_box"
 include { diffdock; diffdock_single; create_diffdock_csv } from "./modules/diffdock"
+include { vina_prepare_receptor2; vina_prepare_ligand2; vina_box2; vina3; vina_pdbtqToSdf3 } from "./modules/vina"
 include { rmsd } from "./modules/scoring"
-include { vina_prepare_receptor2; vina_prepare_ligand2; vina_box2; vina2; vina_pdbtqToSdf } from "./modules/vina"
 
 /*
 * main workflow
@@ -64,11 +67,21 @@ workflow {
     * preparation of reference and input for docking 
     */
     
-    //ref_pdb_sdf_files = prepare_reference_files(dataset)
     sdf_for_docking = prepare_ligand_sdf(ref_sdf_files.collect())
     
     pdb_files.filter{(it.simpleName =~ /_/)}.map{[it.baseName, it]}.set{ pdbs }
     pdb_Hs = add_Hs_to_receptor(pdbs)
+   
+    binding_pockets = p2rank(pdb_Hs)
+    
+    // define box parameters for vina-like tools
+    sdf_for_docking.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
+    box_size = calculate_boxSize(ligand_only.map{file -> tuple(file.simpleName, file)})
+    
+    identifiers.combine(binding_pockets.pockets, by: 0)
+                .combine(box_size, by: 1)
+                .set{ input_dockingBox }
+    boxes = docking_box(input_dockingBox)
    
    
     /* 
@@ -93,17 +106,17 @@ workflow {
     * docking using Vina
     */
     
-    sdf_for_docking.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
     preped_ligands = vina_prepare_ligand2(ligand_only.collect())
     preped_receptors = vina_prepare_receptor2(pdb_Hs)
-    vina_box_out = vina_box2(pdbs, pdb_files.filter{!(it.simpleName =~ /_/)}.collect())
 
     identifiers.combine(preped_receptors, by: 0)
-            .combine(vina_box_out, by: 0)
             .combine(preped_ligands.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
+            .map { [ it[2], it[0], it[1], it[3], it[4] ] }
+            .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
+            .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
             .set {vina_input}
 
-    vina_out = vina2(vina_input)
-    vina_sdf = vina_pdbtqToSdf(vina_out.vina_result)
+    vina_out = vina3(vina_input)
+    vina_sdf = vina_pdbtqToSdf3(vina_out.vina_result)
     
 }
