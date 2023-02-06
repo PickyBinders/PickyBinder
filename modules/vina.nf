@@ -83,7 +83,7 @@ process vina {
     ${params.vina_tool} --receptor ${receptor_pdbqt} --ligand ${ligand_pdbqt} \
                  --config ${vina_box} \
                  --exhaustiveness=32 --out ${rec_lig}_vina.pdbqt \
-                 --log ${rec_lig}_vina.log --seed 160490
+                 > ${rec_lig}_vina.log --seed 160490
     """
 }    
 
@@ -214,7 +214,7 @@ process vina2 {
     ${params.vina_tool} --receptor ${receptor_pdbqt} --ligand ${ligand_pdbqt} \
                  --config ${vina_box} \
                  --exhaustiveness=32 --out ${complex}_vina.pdbqt \
-                 --log ${complex}_vina.log --seed 160490
+                 > ${complex}_vina.log --seed 160490
     """
 }
 
@@ -236,29 +236,30 @@ process vina3 {
     """
     ${params.vina_tool} --receptor ${receptor_pdbqt} --ligand ${ligand_pdbqt} \
                  --config ${vina_box} --out ${complex}_${pocket_nr}_vina.pdbqt \
-                 --log ${complex}_${pocket_nr}_vina.log --exhaustiveness=32 \
-                 --seed 160490 
+                 --exhaustiveness=32 --seed 160490 \
+                 > ${complex}_${pocket_nr}_vina.log
     """
 }
 
 
 process vina_pdbtqToSdf3 {
-    publishDir("$launchDir/vina/vina_predictions/${complex}/${pocket_nr}", mode: 'copy')
+    publishDir("$launchDir/${tool_name}/${tool_name}_predictions/${complex}/${pocket_nr}", mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/meeko'
     tag { complex }
     
     input:
-    tuple val (complex), val (receptor_chain), val (pocket_nr), path (vina_pdbqt)
+    tuple val (complex), val (receptor_chain), val (pocket_nr), path (pdbqt)
+    val (tool_name)
     
     output:
-    tuple val (complex), val (receptor_chain), val (pocket_nr), path ("${complex}_${pocket_nr}_vina*.sdf")
+    tuple val (complex), val (receptor_chain), val (pocket_nr), path ("${complex}_${pocket_nr}_${tool_name}*.sdf")
     
     script:
     """
-    csplit --elide-empty-files --prefix="${complex}_${pocket_nr}_vina_" --suffix-format="%d.pdbqt"  <(echo "ENDMDL"; cat ${vina_pdbqt}) '/ENDMDL/+1' "{*}"
-    for line in ${complex}_${pocket_nr}_vina_*; do if test \$(wc -l < \$line) -eq 1; then rm \$line; fi; done
+    csplit --elide-empty-files --prefix="${complex}_${pocket_nr}_${tool_name}_" --suffix-format="%d.pdbqt"  <(echo "ENDMDL"; cat ${pdbqt}) '/ENDMDL/+1' "{*}"
+    for line in ${complex}_${pocket_nr}_${tool_name}_*; do if test \$(wc -l < \$line) -eq 1; then rm \$line; fi; done
      
-    for file in ${complex}_${pocket_nr}_vina_*.pdbqt; do mk_export.py \${file} -o \${file%.pdbqt}.sdf; done
+    for file in ${complex}_${pocket_nr}_${tool_name}_*.pdbqt; do mk_export.py \${file} -o \${file%.pdbqt}.sdf; done
     """
 }
 
