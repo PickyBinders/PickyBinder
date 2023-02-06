@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+This script is adapted from TankBind
+https://github.com/luwei0917/TankBind/blob/main/examples/prediction_example_using_PDB_6hd6.ipynb
+as of 06.02.2023 
+"""
+
 import sys
 import os
 import numpy as np
@@ -14,8 +20,8 @@ from Bio.PDB import PDBParser
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
-tankbind_src_folder_path = sys.argv[1]
-sys.path.insert(0, tankbind_src_folder_path)
+tankbind_scripts = sys.argv[1]
+sys.path.insert(0, tankbind_scripts)
 
 from feature_utils import get_protein_feature
 from feature_utils import extract_torchdrug_feature_from_mol
@@ -23,6 +29,7 @@ from data import TankBind_prediction
 from model import get_model
 from generation_utils import get_LAS_distance_constraint_mask, get_info_pred_distance, write_with_new_coords
 
+# renaming input
 complex = sys.argv[2]
 protein_file = sys.argv[3]
 ligand_file = sys.argv[4]
@@ -30,8 +37,6 @@ p2rank_predictions = sys.argv[5]
 
 pdb, ligand_resnum = complex.split('__')
 
-# check how many threads possible/useful
-torch.set_num_threads(1)
 
 # get protein feature
 parser = PDBParser(QUIET=True)
@@ -41,13 +46,13 @@ res_list = list(s.get_residues())
 protein_dict = {}
 protein_dict[pdb] = get_protein_feature(res_list)
 
+
 # get compound feature
 compound_dict = {}
-#rdkitMolFile = f"{ligand_resnum}.sdf"  # need to remove Hs???
-#mol = Chem.MolFromMolFile(rdkitMolFile)
 mol = Chem.MolFromMolFile(ligand_file)
 mol = Chem.RemoveHs(mol)
 compound_dict[pdb + f"_{ligand_resnum}" + "_rdkit"] = extract_torchdrug_feature_from_mol(mol, has_LAS_mask=True)
+
 
 # p2rank info
 info = []
@@ -64,7 +69,12 @@ for compound_name in list(compound_dict.keys()):
         info.append([pdb, compound_name, f"pocket_{ith_pocket + 1}", com])
 info = pd.DataFrame(info, columns=['protein_name', 'compound_name', 'pocket_name', 'pocket_com'])
 
+
 # construct dataset
+
+# check how many threads possible/useful
+torch.set_num_threads(1)
+
 dataset_path = f"{complex}_tankbindDataset/"
 os.system(f"mkdir -p {dataset_path}")
 dataset = TankBind_prediction(dataset_path, data=info, protein_dict=protein_dict, compound_dict=compound_dict)
@@ -76,14 +86,15 @@ logging.basicConfig(level=logging.INFO)
 model = get_model(0, logging, device)
 
 # self-dock model
-modelFile = f"{tankbind_src_folder_path}/saved_models/self_dock.pt"
+modelFile = f"{tankbind_scripts}/saved_models/self_dock.pt"
 
 # re-dock model
-# modelFile = f"{tankbind_src_folder_path}/saved_models/re_dock.pt"
+# modelFile = f"{tankbind_scripts}/saved_models/re_dock.pt"
 
 model.load_state_dict(torch.load(modelFile, map_location=device))
 _ = model.eval()
 
+# if problem occur with DataLoader change num_workers to 0
 data_loader = DataLoader(dataset, batch_size=batch_size, follow_batch=['x', 'y', 'compound_pair'], shuffle=False,
                          num_workers=8)
 affinity_pred_list = []
@@ -103,10 +114,10 @@ info_sorted = info.sort_values('affinity', ascending=False)
 
 info_sorted.to_csv(f"{complex}_tankbind.csv")
 
+
 # from predicted interaction distance map to sdf
 device = 'cpu'
 for idx, (dataframe_idx, line) in enumerate(info_sorted.iterrows()):
-    #idx = line['index']
     pocket_name = line['pocket_name']
     compound_name = line['compound_name']
     ligandName = compound_name.split("_")[1]
@@ -117,8 +128,6 @@ for idx, (dataframe_idx, line) in enumerate(info_sorted.iterrows()):
     y_pred = y_pred_list[dataframe_idx].reshape(n_protein, n_compound).to(device)
     y = dataset[dataframe_idx].dis_map.reshape(n_protein, n_compound).to(device)
     compound_pair_dis_constraint = torch.cdist(coords, coords)
-    #rdkitMolFile = f"{ligand_resnum}.sdf"  # need to remove Hs???
-    #mol = Chem.MolFromMolFile(rdkitMolFile)
     mol = Chem.MolFromMolFile(ligand_file)
     mol = Chem.RemoveHs(mol)
     LAS_distance_constraint_mask = get_LAS_distance_constraint_mask(mol).bool()
@@ -129,7 +138,5 @@ for idx, (dataframe_idx, line) in enumerate(info_sorted.iterrows()):
     result_folder = 'tankbind_predictions/'
     os.system(f'mkdir -p {result_folder}')
     toFile = f'{result_folder}/{complex}_{pocket_name}_tankbind.sdf'
-    # toFile = f'{result_folder}/{ligandName}_tankbind.sdf'
-    # print(toFile)
     new_coords = pred_info.sort_values("loss")['coords'].iloc[0].astype(np.double)
     write_with_new_coords(mol, new_coords, toFile)
