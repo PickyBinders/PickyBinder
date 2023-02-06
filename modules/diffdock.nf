@@ -69,17 +69,12 @@ process diffdock_single {
 
     script:
     """
-    # create protein_ligand file
-    echo "protein_path,ligand" > ${complex}_protein_ligand.csv; \
-    echo "${pdb_file},${sdf_file}" >> ${complex}_protein_ligand.csv
-    
-    # diffdock inference
     mkdir data_local
     
-    python datasets/esm_embedding_preparation.py --protein_ligand_csv ${complex}_protein_ligand.csv --out_file data_local/prepared_for_esm.fasta
+    python datasets/esm_embedding_preparation.py --protein_path ${pdb_file} --out_file data_local/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     
-    python -m inference --protein_ligand_csv ${complex}_protein_ligand.csv --out_dir ${complex} \
+    python -m inference --protein_path ${pdb_file} --ligand ${sdf_file} --out_dir ${complex} \
        --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise --keep_local_structures
     """
 }

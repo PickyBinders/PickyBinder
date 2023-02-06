@@ -54,7 +54,10 @@ include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_box } from "./modules/docking_box"
 include { diffdock; diffdock_single; create_diffdock_csv } from "./modules/diffdock"
-include { vina_prepare_receptor2; vina_prepare_ligand2; vina_box2; vina3; vina_pdbtqToSdf3 } from "./modules/vina"
+include { vina_prepare_receptor2; vina_prepare_ligand2; vina_box2; vina3; vina_pdbtqToSdf3; vina_pdbtqToSdf3 as smina_pdbtqToSdf3; vina_pdbtqToSdf3 as gnina_pdbtqToSdf3 } from "./modules/vina"
+include { gnina } from "./modules/gnina"
+include { smina } from "./modules/smina"
+include { tankbind } from "./modules/tankbind"
 include { rmsd } from "./modules/scoring"
 
 /*
@@ -91,15 +94,12 @@ workflow {
     diffd_csv = create_diffdock_csv(ref_sdf_files2.collect())
     diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.collect(), diffd_tool.collect())
     
-    //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
-    
     // diffdock single samples
     //ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
     //         .combine(pdb_Hs, by: 0)
     //         .combine(sdf_for_docking.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
     //         .set{ input_diffd_single }
     //diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
-    //rmsd_out = rmsd(diffdock_predictions.predictions.collect())
     
     
     /* 
@@ -117,6 +117,37 @@ workflow {
             .set {vina_input}
 
     vina_out = vina3(vina_input)
-    vina_sdf = vina_pdbtqToSdf3(vina_out.vina_result)
+    vina_sdf = vina_pdbtqToSdf3(vina_out.vina_result, Channel.value( 'vina' ))
     
+    
+    /* 
+    * docking using smina
+    */
+    
+    smina_out = smina(vina_input)
+    smina_sdf = smina_pdbtqToSdf3(smina_out.smina_result, Channel.value( 'smina' ))
+    
+    
+    /* 
+    * docking using gnina
+    */
+    
+    gnina_out = gnina(vina_input)
+    gnina_sdf = gnina_pdbtqToSdf3(gnina_out.gnina_result, Channel.value( 'gnina' ))
+    
+    
+    /* 
+    * docking using tankbind
+    */
+    
+    identifiers.combine(pdbs, by: 0)
+               .combine(binding_pockets.pockets, by: 0)
+               .combine(ligand_only.map{file -> tuple(file, file.simpleName)}, by: 1)
+               .set {tankbind_input}
+    
+    tankbind_out = tankbind(tankbind_input)
 }
+
+
+
+
