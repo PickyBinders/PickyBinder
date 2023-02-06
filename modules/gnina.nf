@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/gnina"
 
 process gnina {
     publishDir("$launchDir/gnina/gnina_predictions/${complex}/${pocket_nr}", mode: 'copy')
-    container '/scicore/home/schwede/leeman0000/singularity/gnina.img'
+    container '/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img'
     tag { complex }
     label 'vina_like'
     
