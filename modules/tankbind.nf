@@ -6,6 +6,8 @@ params.OUTPUT = "$launchDir/tankbind"
 
 
 process tankbind {
+    publishDir("$launchDir/tankbind/${complex}", pattern: "tankbind_predictions/*", mode: 'copy')
+    publishDir("$launchDir/tankbind/${complex}", pattern: "*_tankbind.csv", mode: 'copy')
     publishDir("$launchDir/tankbind/${complex}", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "tankbind.log"})
     container '/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img'
     tag { complex }

@@ -11,6 +11,7 @@ nextflow.enable.dsl=2
 log.info """
 DTBW  ~  version ${workflow.manifest.version}
 =============================================
+input directory        : ${params.pdb_sdf_files}
 """
 
 /*

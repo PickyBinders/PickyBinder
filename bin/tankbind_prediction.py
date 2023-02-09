@@ -96,7 +96,7 @@ _ = model.eval()
 
 # if problem occur with DataLoader change num_workers to 0
 data_loader = DataLoader(dataset, batch_size=batch_size, follow_batch=['x', 'y', 'compound_pair'], shuffle=False,
-                         num_workers=8)
+                         num_workers=0)
 affinity_pred_list = []
 y_pred_list = []
 for data in tqdm(data_loader):
