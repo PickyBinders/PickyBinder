@@ -264,3 +264,19 @@ process vina_pdbtqToSdf3 {
 }
 
 
+process vina_prepare_ligand3 {
+    publishDir("$launchDir/vina/prepared_ligands", mode: 'copy', pattern: "*.pdbqt")
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/meeko'
+    tag { ligand }
+
+    input:
+    tuple val (ligand), path (sdf_file)
+
+    output:
+    tuple val (ligand), path ("*.pdbqt"), emit: preped_ligand
+
+    script:
+    """
+    mk_prepare_ligand.py -i ${sdf_file} -o ${ligand}.pdbqt
+    """
+}

@@ -23,6 +23,6 @@ process tankbind {
     
     script:
     """
-    tankbind_prediction.py ${params.tankbind_scripts} ${complex} ${pdb_Hs} ${ligand_sdf} ${p2rank_prediction}
+    tankbind_prediction.py ${params.tankbind_scripts} ${complex} ${pdb_Hs} ${ligand_sdf} ${p2rank_prediction} ${params.input_format}
     """
 }

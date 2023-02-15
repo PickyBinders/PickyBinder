@@ -30,13 +30,17 @@ from model import get_model
 from generation_utils import get_LAS_distance_constraint_mask, get_info_pred_distance, write_with_new_coords
 
 # renaming input
-complex = sys.argv[2]
+complex_name = sys.argv[2]
 protein_file = sys.argv[3]
 ligand_file = sys.argv[4]
 p2rank_predictions = sys.argv[5]
+naming = sys.argv[6]
 
-pdb, ligand_resnum = complex.split('__')
-
+if naming == 'default':
+    pdb, ligand = complex_name.split('__')
+else:
+    pdb = complex_name.split('_')[0]
+    ligand = complex_name
 
 # get protein feature
 parser = PDBParser(QUIET=True)
@@ -46,13 +50,11 @@ res_list = list(s.get_residues())
 protein_dict = {}
 protein_dict[pdb] = get_protein_feature(res_list)
 
-
 # get compound feature
 compound_dict = {}
 mol = Chem.MolFromMolFile(ligand_file)
 mol = Chem.RemoveHs(mol)
-compound_dict[pdb + f"_{ligand_resnum}" + "_rdkit"] = extract_torchdrug_feature_from_mol(mol, has_LAS_mask=True)
-
+compound_dict[pdb + f"_{ligand}" + "_rdkit"] = extract_torchdrug_feature_from_mol(mol, has_LAS_mask=True)
 
 # p2rank info
 info = []
@@ -69,13 +71,12 @@ for compound_name in list(compound_dict.keys()):
         info.append([pdb, compound_name, f"pocket_{ith_pocket + 1}", com])
 info = pd.DataFrame(info, columns=['protein_name', 'compound_name', 'pocket_name', 'pocket_com'])
 
-
 # construct dataset
 
 # check how many threads possible/useful
 torch.set_num_threads(1)
 
-dataset_path = f"{complex}_tankbindDataset/"
+dataset_path = f"{complex_name}_tankbindDataset/"
 os.system(f"mkdir -p {dataset_path}")
 dataset = TankBind_prediction(dataset_path, data=info, protein_dict=protein_dict, compound_dict=compound_dict)
 
@@ -112,7 +113,7 @@ info = dataset.data
 info['affinity'] = affinity_pred_list
 info_sorted = info.sort_values('affinity', ascending=False)
 
-info_sorted.to_csv(f"{complex}_tankbind.csv")
+info_sorted.to_csv(f"{complex_name}_tankbind.csv")
 
 
 # from predicted interaction distance map to sdf
@@ -137,6 +138,6 @@ for idx, (dataframe_idx, line) in enumerate(info_sorted.iterrows()):
 
     result_folder = 'tankbind_predictions/'
     os.system(f'mkdir -p {result_folder}')
-    toFile = f'{result_folder}/{complex}_{pocket_name}_tankbind.sdf'
+    toFile = f'{result_folder}/{complex_name}_{pocket_name}_tankbind.sdf'
     new_coords = pred_info.sort_values("loss")['coords'].iloc[0].astype(np.double)
     write_with_new_coords(mol, new_coords, toFile)

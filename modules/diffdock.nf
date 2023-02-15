@@ -17,7 +17,7 @@ process create_diffdock_csv {
     
     script:
     """
-    create_diffdock_csv.py ${ref_sdf_files}
+    create_diffdock_csv.py ${params.input_format} ${params.receptor_Hs} ${ref_sdf_files}
     """
     
 }
