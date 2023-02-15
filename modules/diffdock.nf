@@ -42,6 +42,11 @@ process diffdock {
     script:
     """
     mkdir data_local
+
+    if [ ${params.input_format} != default ]
+    then
+        for file in ${pdb_files}; do receptor=\$(echo \$file | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
+    fi
     
     python datasets/esm_embedding_preparation.py --protein_ligand_csv ${protein_ligand_csv} --out_file data_local/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
@@ -70,7 +75,7 @@ process diffdock_single {
     script:
     """
     mkdir data_local
-    
+
     python datasets/esm_embedding_preparation.py --protein_path ${pdb_file} --out_file data_local/prepared_for_esm.fasta
     HOME=esm/model_weights python esm/scripts/extract.py esm2_t33_650M_UR50D data_local/prepared_for_esm.fasta data/esm2_output --repr_layers 33 --include per_tok
     

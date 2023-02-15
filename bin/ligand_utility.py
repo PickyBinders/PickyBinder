@@ -125,26 +125,13 @@ def protein_ligand_csv(row, output_folder):
         row_content = [pdb_file, sdf_file]
         writer.writerow(row_content)
 
-
-def diffdock_csv(ref_sdf_file, naming, receptor_hs):
+    
+def diffdock_csv(sdf_file_name, pdb_file_name):
     """
     add path of pdb and sdf file to csv file
     """
-    if naming == 'default':
-        pdb_chain, ligand_resnum = ref_sdf_file.split("__")
-        sdf_file = Path() / f"{ligand_resnum}"
-        if receptor_hs == 'no':
-            pdb_file = Path() / f"{pdb_chain}_Hs.pdb"
-        else:
-            pdb_file = Path() / f"{pdb_chain}.pdb"
-    else:
-        receptor = ref_sdf_file.split("_")[0]
-        sdf_file = Path() / f"{receptor}_ligand_preped.sdf"
-        if receptor_hs == 'no':
-            pdb_file = Path() / f"{receptor}_receptor_Hs.pdb"
-        else:
-            pdb_file = Path() / f"{receptor}_receptor.pdb"
-
+    sdf_file = Path() / f"{sdf_file_name}"
+    pdb_file = Path() / f"{pdb_file_name}"
     protein_ligand_file = Path() / "protein_ligand.csv"
 
     if not protein_ligand_file.exists():
@@ -157,4 +144,3 @@ def diffdock_csv(ref_sdf_file, naming, receptor_hs):
         writer = csv.writer(f)
         row_content = [pdb_file, sdf_file]
         writer.writerow(row_content)
-    
