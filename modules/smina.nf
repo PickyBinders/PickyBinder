@@ -23,6 +23,6 @@ process smina {
     smina -r ${receptor_pdbqt} -l ${ligand_pdbqt} --config ${vina_box} \
           -o ${complex}_${pocket_nr}_smina.pdbqt \
           --log ${complex}_${pocket_nr}_smina.log \
-          --exhaustiveness=32 --seed 160490
+          --exhaustiveness=32 --seed 160490 --cpu ${task.cpus}
     """
 }

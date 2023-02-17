@@ -9,7 +9,6 @@ process gnina {
     publishDir("$launchDir/gnina/gnina_predictions/${complex}/${pocket_nr}", mode: 'copy')
     container '/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img'
     tag { complex }
-    label 'vina_like'
     
     input:
     tuple val (complex), val (ligand), val (receptor_chain), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
