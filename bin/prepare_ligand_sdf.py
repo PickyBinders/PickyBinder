@@ -19,7 +19,6 @@ for ref in ref_sdf_files:
 
         try:
             if not ligand_sdf.exists():
-                print(ligand)
                 smiles = mol_to_smiles(ref)
                 smiles_to_3d_mol(smiles, ligand)
                 shutil.copy(ligand_sdf, ligand_resnum_sdf)
@@ -27,16 +26,15 @@ for ref in ref_sdf_files:
             else:
                 shutil.copy(ligand_sdf, ligand_resnum_sdf)
 
-        except:
-            print(ligand, " :got an error")
+        except Exception as e:
+            print(ligand, e)
     else:
         ligand = ref
         ligand_preped = ligand.split(".")[0] + "_preped.sdf"
         ligand_sdf = Path() / f"{ligand_preped}"
         try:
             if not ligand_sdf.exists():
-                print(ligand)
                 smiles = mol_to_smiles(ref)
                 smiles_to_3d_mol(smiles, ligand_preped)
-        except:
-            print(ligand, " :got an error")
+        except Exception as e:
+            print(ligand, e)
