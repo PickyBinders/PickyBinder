@@ -5,7 +5,7 @@
 //params.OUTPUT = "$launchDir/p2rank"
 
 process p2rank {
-    publishDir("$launchDir/boxes/p2rank/${receptor_chain}", mode: 'copy')
+    publishDir("$launchDir/p2rank/${receptor_chain}", mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
     tag { receptor_chain }
 
