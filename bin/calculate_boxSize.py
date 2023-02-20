@@ -13,6 +13,7 @@ autobox_add = sys.argv[3]
 suppl = Chem.SDMolSupplier(sdf_file)
 mol = suppl[0]
 Chem.SanitizeMol(mol)
+mol = Chem.AddHs(mol)
 
 mol.RemoveAllConformers()
 ps = AllChem.ETKDGv2()
