@@ -57,6 +57,53 @@ process diffdock {
 }
 
 
+process create_diffdock_csv_new {
+    publishDir(params.OUTPUT, mode: 'copy')
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
+
+    input:
+    path (ref_sdf_files)
+
+    output:
+    path("protein_ligand.csv"), emit: csv_for_diffdock
+
+    script:
+    """
+    create_diffdock_csv_new.py ${params.input_format} ${params.receptor_Hs} ${ref_sdf_files}
+    """
+
+}
+
+
+process diffdock_new {
+    publishDir(params.OUTPUT, mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "diffdock.log"})
+    publishDir(params.OUTPUT, mode: 'copy', pattern: "diffdock_predictions")
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock_20230221'
+    label 'diffdock'
+
+    input:
+    path (protein_ligand_csv)
+    path (pdb_files)
+    path (sdf_files)
+    path (diffd_tool)
+
+    output:
+    path ("diffdock_predictions/"), emit: predictions
+    path (".command.log"), emit: diffdock_log
+
+    script:
+    """
+    if [ ${params.input_format} != default ]
+    then
+        for file in ${pdb_files}; do receptor=\$(echo \$file | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
+    fi
+
+    python -m inference --protein_ligand_csv ${protein_ligand_csv} --out_dir diffdock_predictions \
+       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+    """
+}
+
+
 process diffdock_single {
     //publishDir(params.OUTPUT, mode: 'copy')
     publishDir("diffdock_predictions", mode: 'copy')

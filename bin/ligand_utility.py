@@ -144,3 +144,23 @@ def diffdock_csv(sdf_file_name, pdb_file_name):
         writer = csv.writer(f)
         row_content = [pdb_file, sdf_file]
         writer.writerow(row_content)
+
+
+def diffdock_csv_new(sdf_file_name, pdb_file_name, complex_name):
+    """
+    add path of pdb and sdf file to csv file
+    """
+    sdf_file = Path() / f"{sdf_file_name}"
+    pdb_file = Path() / f"{pdb_file_name}"
+    protein_ligand_file = Path() / "protein_ligand.csv"
+
+    if not protein_ligand_file.exists():
+        with open(protein_ligand_file, 'w+') as c:
+            writer = csv.writer(c)
+            first_row = ['complex_name','protein_path', 'ligand_description', 'protein_sequence']
+            writer.writerow(first_row)
+
+    with open(protein_ligand_file, 'a') as f:
+        writer = csv.writer(f)
+        row_content = [complex_name, pdb_file, sdf_file, '']
+        writer.writerow(row_content)
