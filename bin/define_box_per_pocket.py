@@ -8,7 +8,7 @@ from Bio.PDB import PDBParser
 tankbind_scripts = sys.argv[1]
 sys.path.insert(0, tankbind_scripts)
 
-from feature_utils import get_protein_feature
+from feature_utils import get_protein_feature, get_clean_res_list
 
 complex = sys.argv[2]
 p2rank_predictions = sys.argv[3]
@@ -42,29 +42,33 @@ for row in range(len(df.index)):
         f.write("\n")
 
 # add a box for the whole protein
-parser = PDBParser(QUIET=True)
-s = parser.get_structure("x", receptor_pdb)
-res_list = list(s.get_residues())
+try:
+    parser = PDBParser(QUIET=True)
+    s = parser.get_structure("x", receptor_pdb)
+    res_list = get_clean_res_list(s.get_residues(), verbose=False, ensure_ca_exist=True)
 
-protein_dict = {}
-protein_dict[receptor_pdb] = get_protein_feature(res_list)
+    protein_dict = {}
+    protein_dict[receptor_pdb] = get_protein_feature(res_list)
 
-protein_center = [str(a.round(3)) for a in protein_dict[receptor_pdb][0].mean(axis=0).numpy()]
+    protein_center = [str(a.round(3)) for a in protein_dict[receptor_pdb][0].mean(axis=0).numpy()]
 
-center_x = 'center_x = ' + str(protein_center[0])
-center_y = 'center_y = ' + str(protein_center[1])
-center_z = 'center_z = ' + str(protein_center[2])
+    center_x = 'center_x = ' + str(protein_center[0])
+    center_y = 'center_y = ' + str(protein_center[1])
+    center_z = 'center_z = ' + str(protein_center[2])
 
-size = str(100)
+    size = str(100)
 
-size_x = "size_x = " + size
-size_y = "size_y = " + size
-size_z = "size_z = " + size
+    size_x = "size_x = " + size
+    size_y = "size_y = " + size
+    size_z = "size_z = " + size
 
-box = [center_x, center_y, center_z, size_x, size_y, size_z]
+    box = [center_x, center_y, center_z, size_x, size_y, size_z]
 
-pocket_file = Path() / f"{complex}_pocketProteinCenter.box"
+    pocket_file = Path() / f"{complex}_pocketProteinCenter.box"
 
-with open(pocket_file, 'w+') as f:
-    f.write('\n'.join(box))
-    f.write("\n")
+    with open(pocket_file, 'w+') as f:
+        f.write('\n'.join(box))
+        f.write("\n")
+except Exception as e:
+    print("Docking box for protein center failed")
+    print(e)

@@ -23,8 +23,7 @@ from tqdm import tqdm
 tankbind_scripts = sys.argv[1]
 sys.path.insert(0, tankbind_scripts)
 
-from feature_utils import get_protein_feature
-from feature_utils import extract_torchdrug_feature_from_mol
+from feature_utils import get_protein_feature, get_clean_res_list, extract_torchdrug_feature_from_mol
 from data import TankBind_prediction
 from model import get_model
 from generation_utils import get_LAS_distance_constraint_mask, get_info_pred_distance, write_with_new_coords
@@ -45,7 +44,7 @@ else:
 # get protein feature
 parser = PDBParser(QUIET=True)
 s = parser.get_structure("x", protein_file)
-res_list = list(s.get_residues())
+res_list = get_clean_res_list(s.get_residues(), verbose=False, ensure_ca_exist=True)
 
 protein_dict = {}
 protein_dict[pdb] = get_protein_feature(res_list)
