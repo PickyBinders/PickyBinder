@@ -55,17 +55,15 @@ if (params.receptor_Hs == "yes") {
 }
 
 if (params.input_format == "default") {
-
+    // receptor name , ligand name, complex
     ref_sdf_files.map { [it.simpleName.split("__")[0], it.simpleName.split("__")[1].split("_")[0], it.simpleName] }
                  .set { identifiers }
-
 }
 
 else {
-
+    // receptor name , ligand name, complex
     ref_sdf_files.map { [it.simpleName.split("_")[0], it.simpleName, it.simpleName] }
                  .set { identifiers }
-
 }
 
 
@@ -80,7 +78,7 @@ include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_box } from "./modules/docking_box"
 include { diffdock; diffdock_single; create_diffdock_csv } from "./modules/diffdock"
-include { diffdock_new; create_diffdock_csv_new } from "./modules/diffdock"
+include { diffdock_new; create_diffdock_csv_new; diffdock_single_new } from "./modules/diffdock"
 include { vina_prepare_receptor2; vina_prepare_ligand3; vina_box2; vina3; vina_pdbtqToSdf3; vina_pdbtqToSdf3 as smina_pdbtqToSdf3; vina_pdbtqToSdf3 as gnina_pdbtqToSdf3 } from "./modules/vina"
 include { gnina } from "./modules/gnina"
 include { smina } from "./modules/smina"
@@ -119,8 +117,9 @@ workflow {
 
     box_size = calculate_boxSize(ligand_tuple)
 
-    identifiers.combine(binding_pockets.pockets, by: 0)
-               .combine(box_size, by: 1)
+    identifiers.combine(pdb_Hs, by: 0)
+               .combine(binding_pockets.pockets, by: 0)
+               .combine(box_size.size, by: 1)
                .set{ input_dockingBox }
     boxes = docking_box(input_dockingBox)
 
@@ -128,15 +127,23 @@ workflow {
     * docking using Diffdock
     */
 
-    diffd_csv = create_diffdock_csv_new(ref_sdf_files.collect())
-    diffdock_predictions = diffdock_new(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
+    //diffd_csv = create_diffdock_csv_new(ref_sdf_files.collect())
+    //diffdock_predictions = diffdock_new(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
 
     // diffdock single samples
-    //ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
-    //         .combine(pdb_Hs, by: 0)
-    //         .combine(sdf_for_docking.sdf_files.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
-    //         .set{ input_diffd_single }
-    //diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+    if (params.input_format == "default") {
+        ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+                     .combine(pdb_Hs, by: 0)
+                     .combine(sdf_for_docking.sdf_files.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
+                     .set{ input_diffd_single }
+    }
+    else {
+        identifiers.combine(pdb_Hs, by: 0)
+                   .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
+                   .set{ input_diffd_single }
+    }
+
+    diffdock_predictions = diffdock_single_new(input_diffd_single, diffd_tool.collect())
 
 
     /*

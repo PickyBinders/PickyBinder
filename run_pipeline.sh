@@ -8,4 +8,5 @@
 source /scicore/home/schwede/leeman0000/.bashrc
 conda activate nextflow
 
-nextflow run /scicore/home/schwede/leeman0000/github/DTBW/main.nf -profile slurm 
+nextflow run /scicore/home/schwede/leeman0000/github/DTBW/main.nf -profile slurm -with-timeline timeline.html
+# -with-report report.html -with-dag dag.pdf
