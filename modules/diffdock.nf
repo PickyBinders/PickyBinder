@@ -130,3 +130,25 @@ process diffdock_single {
        --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise --keep_local_structures
     """
 }
+
+
+process diffdock_single_new {
+    //publishDir(params.OUTPUT, mode: 'copy')
+    publishDir("diffdock_predictions", mode: 'copy')
+    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock_20230221'
+    label 'diffdock_single'
+    tag { complex }
+
+    input:
+    tuple val (ligand), val (receptor_chain), val (complex), path (pdb_file), path (sdf_file)
+    path (diffd_tool)
+
+    output:
+    path ("${complex}/*"), emit: predictions
+
+    script:
+    """
+    python -m inference --complex_name ${complex} --protein_path ${pdb_file} --ligand ${sdf_file} --out_dir ./ \
+       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+    """
+}
