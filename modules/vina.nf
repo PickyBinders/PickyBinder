@@ -70,7 +70,6 @@ process vina {
     //container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/AutoDockVina.img' 
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina'
     tag { rec_lig }
-    label 'vina_like'
     
     input:
     tuple val (rec_lig), path (ligand_pdbqt), val (recep_chain), path (receptor_pdbqt), path (vina_box)
@@ -202,7 +201,6 @@ process vina2 {
     //container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/AutoDockVina.img' 
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina'
     tag { complex }
-    label 'vina_like'
     
     input:
     tuple val (ligand), val (receptor_chain), val (complex), path (receptor_pdbqt), path (vina_box), path (ligand_pdbqt)
@@ -226,7 +224,6 @@ process vina3 {
     //container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/AutoDockVina.img' 
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina'
     tag { complex }
-    label 'vina_like'
     
     input:
     tuple val (complex), val (ligand), val (receptor_chain), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)

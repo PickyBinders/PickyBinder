@@ -9,7 +9,6 @@ process smina {
     publishDir("$launchDir/smina/smina_predictions/${complex}/${pocket_nr}", mode: 'copy')
     conda '/scicore/home/schwede/leeman0000/miniconda3/envs/smina'
     tag { complex }
-    label 'vina_like'
     
     input:
     tuple val (complex), val (ligand), val (receptor_chain), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
