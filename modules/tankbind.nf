@@ -4,17 +4,16 @@
 
 params.OUTPUT = "$launchDir/tankbind"
 
-
 process tankbind {
-    publishDir("$launchDir/tankbind/${complex}", pattern: "tankbind_predictions/*", mode: 'copy')
-    publishDir("$launchDir/tankbind/${complex}", pattern: "*_tankbind.csv", mode: 'copy')
-    publishDir("$launchDir/tankbind/${complex}", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "tankbind.log"})
-    container '/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img'
-    tag { complex }
+    publishDir "$params.OUTPUT/${complex}", pattern: "tankbind_predictions/*", mode: 'copy'
+    publishDir "$params.OUTPUT/${complex}", pattern: "*_tankbind.csv", mode: 'copy'
+    publishDir "$params.OUTPUT/${complex}", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "tankbind.log"}
+    container "/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img"
     containerOptions "-B ${params.tankbind_scripts}"
+    tag { complex }
     
     input:
-    tuple val (ligand), val (receptor_chain), val (complex), path (pdb_Hs), path (p2rank_prediction), path (ligand_sdf)
+    tuple val (ligand), val (receptor), val (complex), path (pdb_Hs), path (p2rank_prediction), path (ligand_sdf)
     
     output:
     tuple val (complex), path ("${complex}_tankbind.csv"), emit: affinities
@@ -23,6 +22,6 @@ process tankbind {
     
     script:
     """
-    tankbind_prediction.py ${params.tankbind_scripts} ${complex} ${pdb_Hs} ${ligand_sdf} ${p2rank_prediction} ${params.input_format}
+    tankbind_prediction.py ${params.tankbind_scripts} ${complex} ${pdb_Hs} ${ligand_sdf} ${p2rank_prediction} ${params.naming}
     """
 }

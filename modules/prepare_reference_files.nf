@@ -5,8 +5,8 @@
 params.OUTPUT = "$launchDir/data"
 
 process prepare_reference_files {
-    publishDir(params.OUTPUT, mode: 'copy')
-    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
+    publishDir "$params.OUTPUT", mode: 'copy'
+    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd"
 
     input:
     path (dataset)

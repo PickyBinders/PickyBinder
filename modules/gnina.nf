@@ -4,17 +4,16 @@
 
 params.OUTPUT = "$launchDir/gnina"
 
-
 process gnina {
-    publishDir("$launchDir/gnina/gnina_predictions/${complex}/${pocket_nr}", mode: 'copy')
-    container '/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img'
+    publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
+    container "/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img"
     tag { complex }
     
     input:
-    tuple val (complex), val (ligand), val (receptor_chain), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
+    tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
     
     output:
-    tuple val (complex), val (receptor_chain), val (pocket_nr), path ("${complex}_${pocket_nr}_gnina.pdbqt"), emit: gnina_result
+    tuple val (complex), val (receptor), val (pocket_nr), path ("${complex}_${pocket_nr}_gnina.pdbqt"), emit: gnina_result
     path ("${complex}_${pocket_nr}_gnina.log"), emit: gnina_log
     
     script:

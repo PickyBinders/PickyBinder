@@ -5,8 +5,8 @@
 params.OUTPUT = "$launchDir"
 
 process rmsd {
-    publishDir(params.OUTPUT, mode: 'copy')
-    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
+    publishDir "$params.OUTPUT", mode: 'copy'
+    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd"
 
     input:
     path (diffdock_predictions)

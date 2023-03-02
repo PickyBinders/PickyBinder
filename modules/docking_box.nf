@@ -5,14 +5,13 @@
 params.OUTPUT = "$launchDir/boxes"
 
 process docking_box {
-    publishDir("$launchDir/boxes/${complex}", mode: 'copy')
-    //conda '/scicore/home/schwede/leeman0000/miniconda3/envs/vina_meeko'
-    container '/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img'
-    tag { ligand }
+    publishDir "$params.OUTPUT/${complex}", mode: 'copy'
+    container "/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img"
     containerOptions "-B ${params.tankbind_scripts}"
+    tag { ligand }
 
     input:
-    tuple val (ligand), val (receptor_chain), val (complex), path (pdb_Hs), path (p2rank_predictions), path (box_size)
+    tuple val (ligand), val (receptor), val (complex), path (pdb_Hs), path (p2rank_predictions), path (box_size)
 
     output:
     path ("*.box"), emit: box_per_pocket

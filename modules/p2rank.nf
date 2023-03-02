@@ -2,18 +2,18 @@
 *  p2rank module 
 */
 
-//params.OUTPUT = "$launchDir/p2rank"
+params.OUTPUT = "$launchDir/p2rank"
 
 process p2rank {
-    publishDir("$launchDir/p2rank/${receptor_chain}", mode: 'copy')
-    conda '/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd'
-    tag { receptor_chain }
+    publishDir "$params.OUTPUT/${receptor}", mode: 'copy'
+    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd"
+    tag { receptor }
 
     input:
-    tuple val (receptor_chain), path (pdb_Hs)
+    tuple val (receptor), path (pdb_Hs)
 
     output:
-    tuple val (receptor_chain), path ("*_predictions.csv"), emit: pockets
+    tuple val (receptor), path ("*_predictions.csv"), emit: pockets
     path ("*_residues.csv")
     path ("visualizations/")
     path ("params.txt")

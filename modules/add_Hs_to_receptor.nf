@@ -2,21 +2,21 @@
 *  add_Hs_to_receptor module 
 */
 
-params.OUTPUT = "$launchDir/data/hydrated_receptors"
+params.OUTPUT = "$launchDir/data/receptor_Hs"
 
 process add_Hs_to_receptor {
-    publishDir(params.OUTPUT, mode: 'copy')
-    container '/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img'
-    tag { receptor_chain }
+    publishDir "$params.OUTPUT", mode: 'copy'
+    container "/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img"
+    tag { receptor }
 
     input:
-    tuple val (receptor_chain), path (pdb_file)
+    tuple val (receptor), path (pdb_file)
 
     output:
-    tuple val (receptor_chain), path ("*_Hs.pdb"), emit: pdb_H_files
+    tuple val (receptor), path ("*_Hs.pdb"), emit: pdb_Hs
 
     script:
     """
-    reduce ${pdb_file} > ${receptor_chain}_Hs.pdb
+    reduce ${pdb_file} > ${receptor}_Hs.pdb
     """
 }
