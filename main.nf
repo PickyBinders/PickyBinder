@@ -13,6 +13,7 @@ DTBW  ~  version ${workflow.manifest.version}
 input directory        : ${params.pdb_sdf_files}
 input naming           : ${params.naming}
 receptor_Hs            : ${params.receptor_Hs}
+diffdock_mode          : ${params.diffdock_mode}
 """
 
 
@@ -120,23 +121,25 @@ workflow {
     * docking using Diffdock
     */
 
-    //diffd_csv = create_diffdock_csv(ref_sdf_files.collect())
-    //diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
-
-    // diffdock single samples
-    if (params.naming == "default") {
-        ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+    if (params.diffdock_mode == "batch") {
+        diffd_csv = create_diffdock_csv(ref_sdf_files.collect())
+        diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
+    }
+    else if (params.diffdock_mode == "single") {
+        if (params.naming == "default") {
+            ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
                      .combine(pdb_Hs, by: 0)
                      .combine(sdf_for_docking.sdf_files.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
                      .set{ input_diffd_single }
-    }
-    else {
-        identifiers.combine(pdb_Hs, by: 0)
+        }
+        else {
+            identifiers.combine(pdb_Hs, by: 0)
                    .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
                    .set{ input_diffd_single }
-    }
+        }
 
-    diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+        diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+    }
 
     /*
     * input preparation vina-like tools
