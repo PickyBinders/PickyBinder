@@ -8,5 +8,5 @@
 source /scicore/home/schwede/leeman0000/.bashrc
 conda activate nextflow
 
-nextflow run /scicore/home/schwede/leeman0000/github/DTBW/main.nf -profile slurm -with-timeline timeline.html
-# -with-report report.html -with-dag dag.pdf
+# $1 for command line input for timeline, report, or dag and to overwrite values from parameter file
+nextflow run /scicore/home/schwede/leeman0000/github/DTBW/main.nf -profile slurm -with-report report.html $1
