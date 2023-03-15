@@ -1,7 +1,7 @@
 # DTBW
 Docking Tool Benchmarking Workflow
 
-## Introduction
+## Overview
 
 This is a nextflow pipeline. Information about Nextflow can be found here https://www.nextflow.io/ 
 and in the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html).   
@@ -38,9 +38,9 @@ Nextflow options:
 
 Workflow options:
 --pdb_sdf_files	arg         path to pdb and sdf files
---naming arg                naming of the reference file: default (pdbID__ligandName.sdf), other (ligand
-                            needs to have a common identifier at the start with the receptor followed by a '_'
-                            eg. 6m7h.pdb and 6m7h_ligand.sdf)
+--naming arg                naming of the reference file: default (pdbID__ligandName.sdf), 
+                            other (ligand needs to have a common identifier at the start 
+                            with the receptor followed by a '_' eg. 6m7h.pdb and 6m7h_ligand.sdf)
 --receptor_Hs arg           are the input pdbs hydrated: no (default), yes
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
 --autobox_add arg           amount of buffer space to add on each side od the box (default 10)
