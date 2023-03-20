@@ -42,6 +42,12 @@ for row in range(len(df.index)):
         f.write("\n")
 
 # add a box for the whole protein
+"""
+The definition of the box for the whole protein is based on tankbinds script. 
+https://github.com/luwei0917/TankBind/blob/main/examples/construction_PDBbind_training_and_test_dataset.ipynb
+as of 28.02.2023
+"""
+
 try:
     parser = PDBParser(QUIET=True)
     s = parser.get_structure("x", receptor_pdb)
