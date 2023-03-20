@@ -23,7 +23,7 @@ process create_diffdock_csv {
 
 process diffdock {
     publishDir "$params.OUTPUT", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "diffdock.log"}
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_predictions"
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_predictions/**"
     conda "/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock_20230221"
 
     input:
@@ -33,7 +33,7 @@ process diffdock {
     path (diffd_tool)
 
     output:
-    path ("diffdock_predictions/"), emit: predictions
+    path ("diffdock_predictions/**"), emit: predictions
     path (".command.log"), emit: diffdock_log
 
     script:
@@ -59,7 +59,7 @@ process diffdock_single {
     path (diffd_tool)
 
     output:
-    path ("${complex}/*"), emit: predictions
+    tuple val (complex), path ("${complex}/*"), emit: predictions
 
     script:
     """

@@ -69,10 +69,11 @@ include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_box } from "./modules/docking_box"
 include { create_diffdock_csv; diffdock; diffdock_single } from "./modules/diffdock"
-include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
+include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
 include { gnina } from "./modules/gnina"
 include { smina } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
+include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost } from "./modules/scoring"
 
 
 /*
@@ -160,7 +161,7 @@ workflow {
     */
 
     vina_out = vina(vina_input)
-    vina_sdf = pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
+    vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
 
     /*
     * docking using smina
@@ -186,4 +187,49 @@ workflow {
                .set {tankbind_input}
 
     tankbind_out = tankbind(tankbind_input)
+
+
+    /*
+    * ost scoring
+    */
+
+    if (params.naming == "default") {
+        pdb_files.map{ [it.baseName, it] }.set{ ref_pdbs }
+    }
+    else {
+        pdb_files.map{ [it.simpleName.split("_")[0], it] }.set{ ref_pdbs }
+    }
+
+    identifiers.combine(ref_pdbs, by: 0).map { [ it[2], it[0], it[1], it[3] ] }         // complex, receptor, ligand, rec_pdb file
+               .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, rec_pdb file, ref_lig file
+               .set { reference_files }
+
+    // tankbind
+
+    reference_files.combine(tankbind_out.sdfs, by: 0)
+                   .set { tb_scoring_input }
+    tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+
+    // diffdock
+    diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple().view()
+    reference_files.combine(diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
+                    .set { dd_scoring_input }
+    dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
+
+    // vina
+    reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { vina_scoring_input }
+    vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
+
+
+    // smina
+    reference_files.combine(smina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { smina_scoring_input }
+    smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+
+
+    // gnina
+    reference_files.combine(gnina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { gnina_scoring_input }
+    gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
 }

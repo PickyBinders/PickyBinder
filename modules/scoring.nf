@@ -2,26 +2,26 @@
 *  scoring module 
 */
 
-params.OUTPUT = "$launchDir"
+params.OUTPUT = "$launchDir/scores"
 
-process rmsd {
-    publishDir "$params.OUTPUT", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd"
+process ost_scoring {
+    publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
+    tag { complex }
 
     input:
-    path (diffdock_predictions)
+    tuple val (complex), val (receptor), val (ligand), path (receptor), path (ref_ligand), path (modeled_ligands)
+    val (tool_name)
 
     output:
-    path ("${params.rmsd_output}/*_performance.png"), emit: performance_plot
-    path ("${params.rmsd_output}/*_RMSD.png"), emit: RMSD_plot
-    path ("${params.rmsd_output}/*_RMSD.csv"), emit: RMSD_table
-    path ("${params.rmsd_output}/summary_table.csv"), emit: summary_table
+    tuple val (complex), path ("*.json"), emit: score
 
     script:
     """
-    mkdir -p ${params.rmsd_output}
-    if [[ ! -d diffdock_predictions ]]; then mkdir diffdock_predictions && mv ${diffdock_predictions} diffdock_predictions; fi
-    
-    rmsd_scoring.py ${params.pdb_sdf_files} ./diffdock_predictions ${params.rmsd_output}
+    source /scicore/home/schwede/leeman0000/activate-ost-develop
+
+    for model in ${modeled_ligands}
+        do
+        ost compare-ligand-structures -m ${receptor} -ml \${model} -r ${receptor} -rl ${ref_ligand} -o \${model}.json --lddt-pli --rmsd
+        done
     """
 }
