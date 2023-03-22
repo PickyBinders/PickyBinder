@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --qos=1day
+#SBATCH --qos=1week
 #SBATCH --mem=2G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=DTBW
