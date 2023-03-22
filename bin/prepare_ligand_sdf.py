@@ -60,7 +60,8 @@ for ref in ref_sdf_files:
         ligand = ref.split("__")[1].split("_")[0]
         ligand_sdf_name = ligand + ".sdf"
         ligand_sdf_resnum_name = ref.split("__")[1]
-        ligand_mol2_name = ligand + ".mol2"
+        ligand_full_name = ref.split(".sdf")[0]
+        ligand_mol2_name = ligand_full_name + ".mol2"
 
         sdf_file = Path() / f"{ligand_sdf_name}"
         resnum_sdf_file = Path() / f"{ligand_sdf_resnum_name}"

@@ -37,13 +37,18 @@ Channel
     .fromPath("${params.diffdock_tool}/*", type: 'any')
     .set { diffd_tool }
 
-if (params.receptor_Hs == "yes") {
+if (params.receptor_Hs == "yes" && params.naming == "default") {
+    Channel
+        .fromPath("${params.pdb_sdf_files}/*.pdb")
+        .map { [it.simpleName, it] }
+        .set { pdb_Hs }
+}
+else if (params.receptor_Hs == "yes" && params.naming == "other") {
     Channel
         .fromPath("${params.pdb_sdf_files}/*.pdb")
         .map { [it.simpleName.split("_")[0], it] }
         .set { pdb_Hs }
 }
-
 
 /*
 * define identifiers to combine the files: receptor name , ligand name, complex name
