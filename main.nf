@@ -12,6 +12,8 @@ DTBW  ~  version ${workflow.manifest.version}
 =============================================
 input directory        : ${params.pdb_sdf_files}
 input naming           : ${params.naming}
+AlphaFold models       : ${params.alphafold}
+reference pdb files    : ${params.ref_files}
 receptor_Hs            : ${params.receptor_Hs}
 diffdock_mode          : ${params.diffdock_mode}
 """
@@ -32,6 +34,15 @@ Channel
 Channel
     .fromPath("${params.pdb_sdf_files}/*.pdb")
     .set { pdb_files }
+
+if (params.alphafold == "yes") {
+    Channel
+        .fromPath("${params.ref_files}/*.pdb")
+        .set { ref_pdb_files }
+}
+else {
+    ref_pdb_files = Channel.empty()
+}
 
 Channel
     .fromPath("${params.diffdock_tool}/*", type: 'any')
@@ -79,6 +90,7 @@ include { gnina } from "./modules/gnina"
 include { smina } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost } from "./modules/scoring"
+include { ost_scoring_models as tb_ost_m; ost_scoring_models as dd_ost_m; ost_scoring_models as vina_ost_m; ost_scoring_models as smina_ost_m; ost_scoring_models as gnina_ost_m } from "./modules/scoring"
 
 
 /*
@@ -198,43 +210,81 @@ workflow {
     * ost scoring
     */
 
-    if (params.naming == "default") {
-        pdb_files.map{ [it.baseName, it] }.set{ ref_pdbs }
+    if (params.alphafold == "yes") {
+        if (params.naming == "default") {
+            ref_pdb_files.map{ [it.simpleName.split("_")[0], it] }
+                         .combine(pdb_files.map{ [it.simpleName.split("_")[0], it.baseName, it] }, by: 0)
+                         .map { [ it[2], it[1], it[3] ] }
+                         .set{ pdbs_for_scoring }
+        }
+        else {
+            ref_pdb_files.map{ [it.simpleName.split("_")[0], it] }
+                         .combine(pdb_files.map{ [it.simpleName.split("_")[0], it] }, by: 0)
+                         .set{ pdbs_for_scoring }
+        }
+        identifiers.combine(pdbs_for_scoring, by: 0).map { [ it[2], it[0], it[1], it[3], it[4] ] }       // complex, receptor, ligand, ref pdb file, model pdb file
+               .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, ref pdb file, model pdb file, ref_lig file
+               .set { reference_files }
     }
     else {
-        pdb_files.map{ [it.simpleName.split("_")[0], it] }.set{ ref_pdbs }
-    }
-
-    identifiers.combine(ref_pdbs, by: 0).map { [ it[2], it[0], it[1], it[3] ] }         // complex, receptor, ligand, rec_pdb file
-               .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, rec_pdb file, ref_lig file
+        if (params.naming == "default") {
+            pdb_files.map{ [it.baseName, it] }.set{ pdbs_for_scoring }
+        }
+        else {
+            pdb_files.map{ [it.simpleName.split("_")[0], it] }.set{ pdbs_for_scoring }
+        }
+        identifiers.combine(pdbs_for_scoring, by: 0).map { [ it[2], it[0], it[1], it[3] ] }       // complex, receptor, ligand, ref pdb file
+               .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, ref pdb file, ref_lig file
                .set { reference_files }
+    }
 
     // tankbind
 
     reference_files.combine(tankbind_out.sdfs, by: 0)
                    .set { tb_scoring_input }
-    tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+
+    if (params.alphafold == "yes") {
+        tb_scores = tb_ost_m(tb_scoring_input, Channel.value( 'tankbind' ))
+    }
+    else {
+        tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+    }
 
     // diffdock
-    diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple().view()
     reference_files.combine(diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
                     .set { dd_scoring_input }
-    dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
-
+    if (params.alphafold == "yes") {
+        dd_scores = dd_ost_m(dd_scoring_input, Channel.value( 'diffdock' ))
+    }
+    else {
+        dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
+    }
     // vina
     reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
                    .set { vina_scoring_input }
-    vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
-
+    if (params.alphafold == "yes") {
+        vina_scores = vina_ost_m(vina_scoring_input, Channel.value( 'vina' ))
+    }
+    else {
+        vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
+    }
 
     // smina
     reference_files.combine(smina_sdf.map{[ it[0], it[3]]}, by: 0)
                    .set { smina_scoring_input }
-    smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
-
-
+    if (params.alphafold == "yes") {
+        smina_scores = smina_ost_m(smina_scoring_input, Channel.value( 'smina' ))
+    }
+    else {
+        smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+    }
     // gnina
     reference_files.combine(gnina_sdf.map{[ it[0], it[3]]}, by: 0)
                    .set { gnina_scoring_input }
-    gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
+    if (params.alphafold == "yes") {
+        gnina_scores = gnina_ost_m(gnina_scoring_input, Channel.value( 'gnina' ))
+    }
+    else {
+        gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
+    }
 }

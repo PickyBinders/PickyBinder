@@ -22,7 +22,12 @@ process p2rank {
     script:
     """
     ml load Java/13.0.2
-    
-    ${params.p2rank_tool}/prank predict -f ${pdb_Hs} -o ./
+
+    if test "${params.alphafold}" = "yes"
+    then
+        ${params.p2rank_tool}/prank predict -f ${pdb_Hs} -o ./ -c alphafold
+    else
+        ${params.p2rank_tool}/prank predict -f ${pdb_Hs} -o ./
+    fi
     """
 }
