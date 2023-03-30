@@ -40,7 +40,7 @@ process diffdock {
     """
     if [ ${params.naming} != default ]
     then
-        for file in ${pdb_files}; do receptor=\$(echo \$file | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
+        for file in ${pdb_files}; do receptor=\$(basename \$file .pdb | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
     fi
 
     python -m inference --protein_ligand_csv ${protein_ligand_csv} --out_dir diffdock_predictions \
