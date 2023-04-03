@@ -26,6 +26,8 @@ process ost_scoring_models {
         done
 
     combine_ost_scores.py ${tool_name}
+
+    ost compare-structures -m ${model_receptor} -r ${ref_receptor} -o ${receptor}.json --lddt --qs-score --rigid-scores
     """
 }
 
