@@ -79,7 +79,7 @@ else {
 * include the modules
 */
 
-include { prepare_ligand_sdf } from "./modules/prepare_ligand_sdf"
+include { ligand_preprocessing } from "./modules/prepare_ligand_sdf"
 include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
@@ -103,7 +103,7 @@ workflow {
     * preprocessing
     */
 
-    sdf_for_docking = prepare_ligand_sdf(ref_sdf_files.collect(), mol_files.collect().ifEmpty([]))
+    sdf_for_docking = ligand_preprocessing(ref_sdf_files.collect(), mol_files.collect().ifEmpty([]))
 
     if (params.naming == "default") {
         sdf_for_docking.sdf_files.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
