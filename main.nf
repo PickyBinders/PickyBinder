@@ -86,8 +86,8 @@ include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_box } from "./modules/docking_box"
 include { create_diffdock_csv; diffdock; diffdock_single } from "./modules/diffdock"
 include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
-include { gnina } from "./modules/gnina"
-include { smina } from "./modules/smina"
+include { gnina_sdf } from "./modules/gnina"
+include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost } from "./modules/scoring"
 include { ost_scoring_models as tb_ost_m; ost_scoring_models as dd_ost_m; ost_scoring_models as vina_ost_m; ost_scoring_models as smina_ost_m; ost_scoring_models as gnina_ost_m } from "./modules/scoring"
@@ -160,7 +160,7 @@ workflow {
     }
 
     /*
-    * input preparation vina-like tools
+    * docking using Vina
     */
 
     preped_ligands = vina_prepare_ligand(ligand_tuple)
@@ -173,10 +173,6 @@ workflow {
                .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
                .set {vina_input}
 
-    /*
-    * docking using Vina
-    */
-
     vina_out = vina(vina_input)
     vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
 
@@ -184,15 +180,20 @@ workflow {
     * docking using smina
     */
 
-    smina_out = smina(vina_input)
-    smina_sdf = smina_pdbtqToSdf(smina_out.smina_result, Channel.value( 'smina' ))
+    identifiers.combine(pdb_Hs, by: 0)
+               .combine(ligand_tuple.map{ [it[1], it[0]] }, by: 1)
+               .map { [ it[2], it[0], it[1], it[3], it[4] ] }
+               .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
+               .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
+               .set {smi_gni_input}
+
+    smina_out = smina_sdf(smi_gni_input)
 
     /*
     * docking using gnina
     */
 
-    gnina_out = gnina(vina_input)
-    gnina_sdf = gnina_pdbtqToSdf(gnina_out.gnina_result, Channel.value( 'gnina' ))
+    gnina_out = gnina_sdf(smi_gni_input)
 
     /*
     * docking using tankbind
@@ -270,7 +271,7 @@ workflow {
     }
 
     // smina
-    reference_files.combine(smina_sdf.map{[ it[0], it[3]]}, by: 0)
+    reference_files.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
                    .set { smina_scoring_input }
     if (params.alphafold == "yes") {
         smina_scores = smina_ost_m(smina_scoring_input, Channel.value( 'smina' ))
@@ -278,8 +279,9 @@ workflow {
     else {
         smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
     }
+
     // gnina
-    reference_files.combine(gnina_sdf.map{[ it[0], it[3]]}, by: 0)
+    reference_files.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
                    .set { gnina_scoring_input }
     if (params.alphafold == "yes") {
         gnina_scores = gnina_ost_m(gnina_scoring_input, Channel.value( 'gnina' ))
