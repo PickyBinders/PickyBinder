@@ -90,7 +90,8 @@ include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost } from "./modules/scoring"
-include { ost_scoring_models as tb_ost_m; ost_scoring_models as dd_ost_m; ost_scoring_models as vina_ost_m; ost_scoring_models as smina_ost_m; ost_scoring_models as gnina_ost_m } from "./modules/scoring"
+include { ost_scoring_modelLigands as tb_ost_m; ost_scoring_modelLigands as dd_ost_m; ost_scoring_modelLigands as vina_ost_m; ost_scoring_modelLigands as smina_ost_m; ost_scoring_modelLigands as gnina_ost_m } from "./modules/scoring"
+include { ost_scoring_modelReceptors; combine_modelReceptors_scores } from "./modules/scoring"
 
 
 /*
@@ -223,6 +224,10 @@ workflow {
                          .combine(pdb_files.map{ [it.simpleName.split("_")[0], it] }, by: 0)
                          .set{ pdbs_for_scoring }
         }
+
+        modelled_receptors_scores = ost_scoring_modelReceptors(pdbs_for_scoring)
+        modelled_receptors_scores_summary = combine_modelReceptors_scores(modelled_receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
+
         identifiers.combine(pdbs_for_scoring, by: 0).map { [ it[2], it[0], it[1], it[3], it[4] ] }       // complex, receptor, ligand, ref pdb file, model pdb file
                .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, ref pdb file, model pdb file, ref_lig file
                .set { reference_files }
