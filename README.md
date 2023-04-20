@@ -26,7 +26,7 @@ gives information about each process including the used resources.
 The general command to run the pipeline is:
 
 ```
-sbatch /scicore/home/schwede/leeman0000/github/DTBW/run_pipeline.sh "<Nextflow options> <Workflow options>"
+sbatch /scicore/home/schwede/GROUP/TeamLIGATE/tools/PickyBinder/run_pipeline.sh "<Nextflow options> <Workflow options>"
 ```
 
 The possible options are:
