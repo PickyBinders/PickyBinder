@@ -38,10 +38,14 @@ Nextflow options:
 
 Workflow options:
 --pdb_sdf_files	arg         path to pdb and sdf files
---naming arg                naming of the reference file: default (pdbID__ligandName.sdf), 
-                            other (ligand needs to have a common identifier at the start 
-                            with the receptor followed by a '_' eg. 6m7h.pdb and 6m7h_ligand.sdf)
+--naming arg                naming of the input files: 
+                                default (pdbID__ligandName.sdf), 
+                                other (ligand needs to have a common identifier with the receptor at 
+                                       the start followed by a '_' eg. 6m7h.pdb and 6m7h_ligand.sdf)
 --receptor_Hs arg           are the input pdbs hydrated: no (default), yes
+--alphafold arg             are the receptors AlphaFold modelled strucures: no (default), yes
+--ref_files arg             path to receptor reference files when running workflow with 
+                            AlphaFold modelled receptors
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
 --autobox_add arg           amount of buffer space to add on each side od the box (default 10)
 ```
