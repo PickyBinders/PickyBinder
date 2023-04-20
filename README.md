@@ -1,5 +1,5 @@
-# DTBW
-Docking Tool Benchmarking Workflow
+# PickyBinder
+Protein-ligand interaction prediction benchmarking workflow
 
 ## Overview
 
