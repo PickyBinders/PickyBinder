@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+The functions uncharge(), run_rxn(), and protonator() are based on https://github.com/jensengroup/protonator .
+"""
+
 from pathlib import Path
 import sys
 import shutil
