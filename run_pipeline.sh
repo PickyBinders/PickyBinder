@@ -9,4 +9,4 @@ source /scicore/home/schwede/leeman0000/.bashrc
 conda activate nextflow
 
 # $1 for command line input for timeline, report, or dag and to overwrite values from parameter file
-nextflow run /scicore/home/schwede/leeman0000/github/DTBW/main.nf -profile slurm -with-report report.html $1
+nextflow run /scicore/home/schwede/GROUP/TeamLIGATE/tools/PickyBinder/main.nf -profile slurm -with-report report.html $1
