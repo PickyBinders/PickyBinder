@@ -3,7 +3,7 @@
 #SBATCH --qos=1week
 #SBATCH --mem=2G
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=DTBW
+#SBATCH --job-name=PickyBinder
 
 source /scicore/home/schwede/leeman0000/.bashrc
 conda activate nextflow
