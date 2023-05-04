@@ -92,7 +92,7 @@ include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost } from "./modules/scoring"
 include { ost_scoring_modelLigands as tb_ost_m; ost_scoring_modelLigands as dd_ost_m; ost_scoring_modelLigands as vina_ost_m; ost_scoring_modelLigands as smina_ost_m; ost_scoring_modelLigands as gnina_ost_m } from "./modules/scoring"
 include { ost_scoring_modelReceptors; combine_modelReceptors_scores } from "./modules/scoring"
-
+include { score_summary } from "./modules/scoring"
 
 /*
 * main workflow
@@ -265,9 +265,10 @@ workflow {
     else {
         dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
     }
+
     // vina
     reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { vina_scoring_input }
+                     .set { vina_scoring_input }
     if (params.alphafold == "yes") {
         vina_scores = vina_ost_m(vina_scoring_input, Channel.value( 'vina' ))
     }
@@ -294,4 +295,11 @@ workflow {
     else {
         gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
     }
+
+    // create score summary file
+    overall_scores = score_summary(tb_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect().combine(
+                                   dd_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
+                                   vina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
+                                   smina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
+                                   gnina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()))
 }

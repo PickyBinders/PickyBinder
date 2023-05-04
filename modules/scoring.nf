@@ -98,3 +98,19 @@ process combine_modelReceptors_scores {
     done
     """
 }
+
+process score_summary {
+    publishDir "$params.OUTPUT", mode: 'copy'
+
+    input:
+    path (scores)
+
+    output:
+    path ("score_summary.csv"), emit: score_summary
+
+    script:
+    """
+    echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd' > score_summary.csv
+    grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
+    """
+}

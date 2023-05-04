@@ -64,9 +64,9 @@ score_df.sort_values(by=['Pocket', 'Rank'], inplace=True)
 if tool_name == 'vina' or tool_name == 'smina' or tool_name == 'gnina':
     complex_name = score_df.iloc[0]['Complex']
     pocket_nr = score_df.iloc[0]['Pocket']
-    out_file = complex_name + '_' + pocket_nr + '_score_summary.csv'
+    out_file = complex_name + '_' + pocket_nr + '_' + tool_name + '_score_summary.csv'
 elif tool_name == 'tankbind' or tool_name == 'diffdock':
     complex_name = score_df.iloc[0]['Complex']
-    out_file = complex_name + '_score_summary.csv'
+    out_file = complex_name + '_' + tool_name + '_score_summary.csv'
 
 score_df.to_csv(out_file, index=False)
