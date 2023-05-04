@@ -2,11 +2,12 @@
 *  docking_box module 
 */
 
+params.CONTAINER = "qizhipei-tankbind_py38"
 params.OUTPUT = "$launchDir/boxes"
 
 process docking_box {
     publishDir "$params.OUTPUT/${complex}", mode: 'copy'
-    container "/scicore/home/schwede/leeman0000/singularity/qizhipei-tankbind_py38.img"
+    container params.CONTAINER
     containerOptions "-B ${params.tankbind_scripts}"
     tag { ligand }
 

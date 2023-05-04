@@ -2,11 +2,12 @@
 *  gnina module
 */
 
+params.CONTAINER = "nmaus-gnina"
 params.OUTPUT = "$launchDir/gnina"
 
 process gnina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container "/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img"
+    container params.CONTAINER
     tag { complex }
     
     input:
@@ -28,7 +29,7 @@ process gnina {
 
 process gnina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container "/scicore/home/schwede/leeman0000/singularity/nmaus-gnina.img"
+    container params.CONTAINER
     tag { complex }
 
     input:
