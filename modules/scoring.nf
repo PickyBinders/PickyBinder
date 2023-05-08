@@ -2,11 +2,13 @@
 *  scoring module 
 */
 
+params.CONTAINER = "registry.scicore.unibas.ch-schwede-openstructure-2.4.0"
 params.OUTPUT = "$launchDir/scores"
-
 
 process ost_scoring {
     publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
+    container params.CONTAINER
+    containerOptions "-B $baseDir/bin"
     tag { complex }
 
     input:
@@ -19,20 +21,20 @@ process ost_scoring {
 
     script:
     """
-    source /scicore/home/schwede/leeman0000/activate-ost-develop
-
     for model in ${modeled_ligands}
         do
         ost compare-ligand-structures -m ${ref_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
         done
 
-    combine_ost_scores.py ${tool_name}
+    python3 $baseDir/bin/combine_ost_scores.py ${tool_name}
     """
 }
 
 
 process ost_scoring_modelLigands {
     publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
+    container params.CONTAINER
+    containerOptions "-B $baseDir/bin"
     tag { complex }
 
     input:
@@ -45,20 +47,20 @@ process ost_scoring_modelLigands {
 
     script:
     """
-    source /scicore/home/schwede/leeman0000/activate-ost-develop
-
     for model in ${modeled_ligands}
         do
         ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
         done
 
-    combine_ost_scores.py ${tool_name}
+    python3 $baseDir/bin/combine_ost_scores.py ${tool_name}
     """
 }
 
 
 process ost_scoring_modelReceptors {
     publishDir "$params.OUTPUT/receptors", mode: 'copy'
+    container params.CONTAINER
+    containerOptions "-B $baseDir/bin"
     tag { receptor }
 
     input:
@@ -69,8 +71,6 @@ process ost_scoring_modelReceptors {
 
     script:
     """
-    source /scicore/home/schwede/leeman0000/activate-ost-develop
-
     ost compare-structures -m ${model_receptor} -r ${ref_receptor} -o ${receptor}.json --lddt --qs-score --rigid-scores
     """
 }
