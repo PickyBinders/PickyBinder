@@ -2,11 +2,12 @@
 *  vina module
 */
 
+params.CONTAINER = "ADFRsuite"
 params.OUTPUT = "$launchDir/vina"
 
 process vina_prepare_receptor {
     publishDir "$params.OUTPUT/prepared_receptors", mode: 'copy'
-    container "/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img"
+    container params.CONTAINER
     tag { receptor }
 
     input:
