@@ -2,12 +2,11 @@
 *  gnina module
 */
 
-params.CONTAINER = "nmaus-gnina"
 params.OUTPUT = "$launchDir/gnina"
 
 process gnina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container params.CONTAINER
+    container "${params.gnina_sing}"
     tag { complex }
     
     input:
@@ -29,7 +28,7 @@ process gnina {
 
 process gnina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container params.CONTAINER
+    container "${params.gnina_sing}"
     tag { complex }
 
     input:

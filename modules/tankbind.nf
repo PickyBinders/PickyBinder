@@ -2,14 +2,13 @@
 *  tankbind module
 */
 
-params.CONTAINER = "qizhipei-tankbind_py38"
 params.OUTPUT = "$launchDir/tankbind"
 
 process tankbind {
     publishDir "$params.OUTPUT/${complex}", pattern: "tankbind_predictions/*", mode: 'copy'
     publishDir "$params.OUTPUT/${complex}", pattern: "*_tankbind.csv", mode: 'copy'
     publishDir "$params.OUTPUT/${complex}", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "tankbind.log"}
-    container params.CONTAINER
+    container "${params.tankbind_sing}"
     containerOptions "-B ${params.tankbind_scripts}"
     tag { complex }
     

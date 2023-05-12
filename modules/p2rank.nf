@@ -20,7 +20,7 @@ process p2rank {
 
     script:
     """
-    ml load Java/13.0.2
+    ${params.load_java}
 
     if test "${params.alphafold}" = "yes"
     then

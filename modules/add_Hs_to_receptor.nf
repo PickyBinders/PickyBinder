@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/data/receptor_Hs"
 
 process add_Hs_to_receptor {
     publishDir "$params.OUTPUT", mode: 'copy'
-    container "/scicore/home/schwede/zohixe92/CAMEO/CAMEO_predictors/BaselineCM_AutoDockVina/container_scripts/ADFRsuite.img"
+    container "${params.adfr_sing}"
     tag { receptor }
 
     input:

@@ -2,12 +2,11 @@
 *  scoring module 
 */
 
-params.CONTAINER = "registry.scicore.unibas.ch-schwede-openstructure-2.4.0"
 params.OUTPUT = "$launchDir/scores"
 
 process ost_scoring {
     publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
-    container params.CONTAINER
+    container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
     tag { complex }
 
@@ -33,7 +32,7 @@ process ost_scoring {
 
 process ost_scoring_modelLigands {
     publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
-    container params.CONTAINER
+    ccontainer "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
     tag { complex }
 
@@ -59,7 +58,7 @@ process ost_scoring_modelLigands {
 
 process ost_scoring_modelReceptors {
     publishDir "$params.OUTPUT/receptors", mode: 'copy'
-    container params.CONTAINER
+    container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
     tag { receptor }
 

@@ -2,12 +2,11 @@
 *  vina module
 */
 
-params.CONTAINER = "ADFRsuite"
 params.OUTPUT = "$launchDir/vina"
 
 process vina_prepare_receptor {
     publishDir "$params.OUTPUT/prepared_receptors", mode: 'copy'
-    container params.CONTAINER
+    container "${params.adfr_sing}"
     tag { receptor }
 
     input:
@@ -25,7 +24,7 @@ process vina_prepare_receptor {
 
 process vina_prepare_ligand {
     publishDir "$params.OUTPUT/prepared_ligands", mode: 'copy', pattern: "*.pdbqt"
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/meeko"
+    conda "${params.meeko_conda}"
     tag { ligand }
 
     input:
@@ -43,7 +42,7 @@ process vina_prepare_ligand {
 
 process vina {
     publishDir "$params.OUTPUT/vina_predictions/${complex}/${pocket_nr}", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/vina"
+    conda "${params.vina_conda}"
     tag { complex }
     
     input:
@@ -65,7 +64,7 @@ process vina {
 
 process pdbtqToSdf {
     publishDir "$launchDir/${tool_name}/${tool_name}_predictions/${complex}/${pocket_nr}", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/meeko"
+    conda "${params.meeko_conda}"
     tag { complex }
     
     input:

@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/smina"
 
 process smina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/smina"
+    conda "${params.smina_conda}"
     tag { complex }
     
     input:
@@ -28,7 +28,7 @@ process smina {
 
 process smina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/smina"
+    conda "${params.smina_conda}"
     tag { complex }
 
     input:

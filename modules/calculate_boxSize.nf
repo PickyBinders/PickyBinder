@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/boxes/box_size"
 process calculate_boxSize {
     publishDir "$params.OUTPUT", pattern: "*_boxSize.txt", mode: 'copy'
     publishDir "$params.OUTPUT/log_files", pattern: "*_log.txt", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/vina_meeko"
+    conda "${params.meeko_conda}"
     tag { ligand }
 
     input:

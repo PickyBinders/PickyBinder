@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/diffdock"
 
 process create_diffdock_csv {
     publishDir "$params.OUTPUT", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/spyrmsd"
+    conda "${params.meeko_conda}"
 
     input:
     path (ref_sdf_files)
@@ -24,7 +24,7 @@ process create_diffdock_csv {
 process diffdock {
     publishDir "$params.OUTPUT", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "diffdock.log"}
     publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_predictions/**"
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock_20230221"
+    conda "${params.diffdock_conda}"
 
     input:
     path (protein_ligand_csv)
@@ -51,7 +51,7 @@ process diffdock {
 
 process diffdock_single {
     publishDir "$params.OUTPUT/diffdock_predictions", mode: 'copy'
-    conda "/scicore/home/schwede/leeman0000/miniconda3/envs/diffdock_20230221"
+    conda "${params.diffdock_conda}"
     tag { complex }
 
     input:
