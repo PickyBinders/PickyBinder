@@ -1,0 +1,83 @@
+BootStrap: docker
+From: ubuntu:22.04
+
+# Singularity recipe to build a container with ADFRsuite.
+
+
+%files
+##############################################################################
+# DEPENDENCIES
+##############################################################################
+ADFRsuite_x86_64Linux_1.0.tar.gz /opt/ADFRsuite_x86_64Linux_1.0.tar.gz
+
+
+%environment
+##############################################################################
+# ENVIRONMENT
+##############################################################################
+export ADFRsuite_PATH="/opt/ADFRsuite/"
+export PATH="${ADFRsuite_PATH}/bin:$PATH"
+
+
+%post
+##############################################################################
+# BUILD
+##############################################################################
+# %environment not availble for an unknown reason, duplicating
+export ADFRsuite_PATH="/opt/ADFRsuite/"
+export PATH="${ADFRsuite_PATH}/bin:$PATH"
+
+cd /opt
+tar -xf ADFRsuite_x86_64Linux_1.0.tar.gz
+cd ADFRsuite_x86_64Linux_1.0
+echo "Y" | ./install.sh -d "$ADFRsuite_PATH"
+
+cd ..
+rm -rf ADFRsuite_x86_64Linux_1.0
+rm -rf ADFRsuite_x86_64Linux_1.0.tar.gz
+
+
+%runscript
+##############################################################################
+# RUNSCRIPT
+##############################################################################
+cat << EOF
+Singularity container for ADFRsuite.
+
+This container contains the following commands from the ADFRsuite:
+EOF
+
+ls /opt/ADFRsuite/bin/*
+
+cat << EOF
+
+To execute them, run:
+
+singularity exec <IMAGE NAME> <command>
+
+EOF
+
+
+%apprun prepare_receptor
+##############################################################################
+# Usage:
+#    singularity run --app prepare_receptor <IMAGE NAME> [options]
+##############################################################################
+prepare_receptor "$@"
+
+
+%apprun prepare_ligand
+##############################################################################
+# Usage:
+#    singularity run --app prepare_ligand <IMAGE NAME> [options]
+##############################################################################
+prepare_ligand "$@"
+
+
+%help
+Usage:
+    singularity run-help <IMAGE NAME>
+    singularity run --app prepare_receptor <IMAGE NAME> [options]
+    singularity run --app prepare_ligand <IMAGE NAME> [options]
+    singularity exec <IMAGE NAME>
+    singularity exec <IMAGE NAME> [command] [options]
