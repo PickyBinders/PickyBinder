@@ -31,6 +31,11 @@ params {
         // load java
         load_java               = "<command to enable java>"
 
+        // cluster options: define queues, partions, ... ; anything besides time and memory
+        cpu_options               = "<slurm cluster options for cpu processes>"
+        diffdock_options          = "<slurm cluster options for DiffDock>"
+        gnina_options             = "<slurm cluster options for GNINA>"
+
         // parameters
         autobox_add             = "10"
 }
