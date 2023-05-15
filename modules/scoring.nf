@@ -32,7 +32,7 @@ process ost_scoring {
 
 process ost_scoring_modelLigands {
     publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
-    ccontainer "${params.ost_sing}"
+    container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
     tag { complex }
 

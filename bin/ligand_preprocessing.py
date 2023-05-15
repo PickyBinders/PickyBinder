@@ -119,7 +119,7 @@ for ref in ref_sdf_files:
     pattern = re.compile("(__)")
 
     if bool(re.search(pattern, ref)):
-        ligand = ref.split("__")[1].split("_")[0]
+        ligand = ref.split("__")[1].split('.sdf')[0].split("_")[0]
         ligand_sdf_name = ligand + ".sdf"
         ligand_sdf_resnum_name = ref.split("__")[1]
         ligand_full_name = ref.split(".sdf")[0]
@@ -148,13 +148,15 @@ for ref in ref_sdf_files:
                 with Chem.SDWriter(ligand_sdf_name) as w:
                     w.write(mol)
 
-                shutil.copy(sdf_file, resnum_sdf_file)
+                if ligand_sdf_resnum_name != ligand_sdf_name:
+                    shutil.copy(sdf_file, resnum_sdf_file)
                 print("ligand preparation done")
             else:
                 print(ref + " ligand preparation failed")
         else:
             print("sdf file already exists")
-            shutil.copy(sdf_file, resnum_sdf_file)
+            if ligand_sdf_resnum_name != ligand_sdf_name:
+                shutil.copy(sdf_file, resnum_sdf_file)
 
     else:
         ligand = ref.split(".sdf")[0]
