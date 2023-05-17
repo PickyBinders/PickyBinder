@@ -5,6 +5,7 @@ The functions uncharge(), run_rxn(), and protonator() are based on https://githu
 """
 
 from pathlib import Path
+from collections import Counter
 import sys
 import shutil
 import re
@@ -14,6 +15,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import rdBase
 from io import StringIO
+import csv
 
 ref_sdf_files = sys.argv[1:]
 
@@ -109,6 +111,12 @@ def mol_and_smiles_from_file(sdf_file, mol2_file):
     return mol, smiles, problem
 
 
+warnings = []
+no_uncharge = []
+no_protonation = []
+no_embedding = []
+preparation_failed = []
+
 for ref in ref_sdf_files:
     print("now processing: " + ref)
 
@@ -134,16 +142,28 @@ for ref in ref_sdf_files:
 
             if not problem:
                 mol = Chem.MolFromSmiles(smiles)
-                mol = uncharge(mol)
+                try:
+                    mol = uncharge(mol)
+                except Exception as e:
+                    print("Error: cannot uncharge molecule")
+                    print("error: " + str(e))
+                    no_uncharge.append(ligand)
+
                 try:
                     mol = protonator(mol)
                     print("molecule protonated")
                 except Exception as e:
                     print("'Error: cannot protonate molecule'")
                     print("error: " + str(e))
-                
-                mol = Chem.AddHs(mol)
-                AllChem.EmbedMolecule(mol)
+                    no_protonation.append(ligand)
+
+                try:
+                    mol = Chem.AddHs(mol)
+                    AllChem.EmbedMolecule(mol)
+                except Exception as e:
+                    print("Error: cannot embed molecule")
+                    print("error: " + str(e))
+                    no_embedding.append(ligand)
 
                 with Chem.SDWriter(ligand_sdf_name) as w:
                     w.write(mol)
@@ -153,6 +173,7 @@ for ref in ref_sdf_files:
                 print("ligand preparation done")
             else:
                 print(ref + " ligand preparation failed")
+                preparation_failed.append(ligand)
         else:
             print("sdf file already exists")
             if ligand_sdf_resnum_name != ligand_sdf_name:
@@ -172,16 +193,28 @@ for ref in ref_sdf_files:
 
             if not problem:
                 mol = Chem.MolFromSmiles(smiles)
-                mol = uncharge(mol)
+                try:
+                    mol = uncharge(mol)
+                except Exception as e:
+                    print("Error: cannot uncharge molecule")
+                    print("error: " + str(e))
+                    no_uncharge.append(ligand)
+
                 try:
                     mol = protonator(mol)
                     print("molecule protonated")
                 except Exception as e:
                     print("Error: cannot protonate molecule")
                     print("error: " + str(e))
+                    no_protonation.append(ligand)
 
-                mol = Chem.AddHs(mol)
-                AllChem.EmbedMolecule(mol)
+                try:
+                    mol = Chem.AddHs(mol)
+                    AllChem.EmbedMolecule(mol)
+                except Exception as e:
+                    print("Error: cannot embed molecule")
+                    print("error: " + str(e))
+                    no_embedding.append(ligand)
 
                 with Chem.SDWriter(ligand_preped) as w:
                     w.write(mol)
@@ -189,9 +222,63 @@ for ref in ref_sdf_files:
                 print("ligand preparation done")
             else:
                 print(ref + " ligand preparation failed")
+                preparation_failed.append(ligand)
         else:
             print("sdf file already exists")
 
+    if len(sio.getvalue()) != 0:
+        warnings.append([ligand, sio.getvalue().strip()])
     print("warnings/errors:")
     print(sio.getvalue())
     sys.stderr = stderr
+
+# print ligand preparation overview to log file and save to problems file
+set_prep_failed = set(preparation_failed)
+set_no_uncharge = set(no_uncharge)
+set_no_protonation = set(no_protonation)
+set_no_embedding = set(no_embedding)
+
+preparation_failed = list(set_prep_failed)
+no_uncharge = list(set_no_uncharge)
+no_protonation = list(set_no_protonation)
+no_embedding = list(set_no_embedding)
+warnings.sort()
+
+preparation_failed.sort()
+no_uncharge.sort()
+no_protonation.sort()
+no_embedding.sort()
+warnings.sort()
+
+with open('problems_ligand_prep.txt', 'w+') as f:
+    f.write('Ligand preparation failed for: ')
+    f.writelines(','.join(preparation_failed))
+    f.write('\nUncharging failed for: ')
+    f.writelines(','.join(no_uncharge))
+    f.write('\nProtonation failed for: ')
+    f.writelines(','.join(no_protonation))
+    f.write('\nEmbedding failed for: ')
+    f.writelines(','.join(no_embedding))
+    f.write('\nWarnings: \n')
+    wr = csv.writer(f)
+    wr.writerows(warnings)
+
+print('\n')
+print('*********************************')
+print('*  Ligand preparation overview  *')
+print('*********************************')
+print('\n')
+print('Ligand preparation failed:')
+print(*preparation_failed, sep='\n')
+print('\n')
+print('Uncharging failed:')
+print(*no_uncharge, sep='\n')
+print('\n')
+print('Protonation failed:')
+print(*no_protonation, sep='\n')
+print('\n')
+print('Embedding failed:')
+print(*no_embedding, sep='\n')
+print('\n')
+print('Warnings:')
+print(*warnings, sep='\n')

@@ -25,7 +25,8 @@ process prepare_ligand_sdf {
 
 
 process ligand_preprocessing {
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "*.sdf"
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "*.{sdf,txt}"
+    //publishDir "$params.OUTPUT", mode: 'copy', pattern: "*.txt"
     publishDir "$params.OUTPUT", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "ligand_preprocessing.log"}
     conda "${params.meeko_conda}"
 
@@ -35,6 +36,7 @@ process ligand_preprocessing {
 
     output:
     path ("*.sdf"), emit: sdf_files
+    path ("problems_ligand_prep.txt"), emit: lig_prep_problems
     path (".command.log"), emit: ligand_prep_log
 
     script:
