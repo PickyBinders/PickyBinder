@@ -43,7 +43,11 @@ process diffdock {
         for file in ${pdb_files}; do receptor=\$(basename \$file .pdb | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
     fi
 
-    python -m inference --protein_ligand_csv ${protein_ligand_csv} --out_dir diffdock_predictions \
+    tail -n +2 ${protein_ligand_csv} | cut -d',' -f2 > receptors.txt
+    head -1 ${protein_ligand_csv} > cleaned_protein_ligand.csv
+    while read -r line; do if test -f \${line}; then grep \$line ${protein_ligand_csv} >> cleaned_protein_ligand.csv; fi;done < receptors.txt
+
+    python -m inference --protein_ligand_csv cleaned_protein_ligand.csv --out_dir diffdock_predictions \
        --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
     """
 }
