@@ -2,7 +2,7 @@
 *  prepare_ligand_sdf module 
 */
 
-params.OUTPUT = "$launchDir/data/ligands"
+params.OUTPUT = "$launchDir/preprocessing/ligands"
 
 process prepare_ligand_sdf {
     publishDir "$params.OUTPUT", mode: 'copy', pattern: "*.sdf"

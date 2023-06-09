@@ -2,7 +2,7 @@
 *  add_Hs_to_receptor module 
 */
 
-params.OUTPUT = "$launchDir/data/receptor_Hs"
+params.OUTPUT = "$launchDir/preprocessing/receptor_Hs"
 
 process add_Hs_to_receptor {
     publishDir "$params.OUTPUT", mode: 'copy'
