@@ -11,7 +11,7 @@ process ost_scoring {
     tag { complex }
 
     input:
-    tuple val (complex), val (receptor), val (ligand), path (ref_receptor), path (ref_ligand), path (modeled_ligands)
+    tuple val (complex), val (receptor), val (ligand), path (ref_receptor, stageAs: "ref/*"), path (model_receptor), path (ref_ligand), path (modelled_ligands)
     val (tool_name)
 
     output:
@@ -20,38 +20,18 @@ process ost_scoring {
 
     script:
     """
-    for model in ${modeled_ligands}
-        do
-        ost compare-ligand-structures -m ${ref_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
-        done
+    for model in ${modelled_ligands}
+    do
+        if [[ ${ref_receptor} == *.pdb ]]
+        then
+            ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
+        elif [[ ${ref_receptor} == *.cif ]]
+        then
+            ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -o \${model%.sdf}.json --lddt-pli --rmsd
+        fi
+    done
 
-    python3 $baseDir/bin/combine_ost_scores.py ${tool_name}
-    """
-}
-
-
-process ost_scoring_modelLigands {
-    publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
-    container "${params.ost_sing}"
-    containerOptions "-B $baseDir/bin"
-    tag { complex }
-
-    input:
-    tuple val (complex), val (receptor), val (ligand), path (ref_receptor), path (model_receptor), path (ref_ligand), path (modeled_ligands)
-    val (tool_name)
-
-    output:
-    tuple val (complex), path ("*.json"), emit: score
-    tuple val (complex), path ("*.csv"), emit: summary
-
-    script:
-    """
-    for model in ${modeled_ligands}
-        do
-        ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
-        done
-
-    python3 $baseDir/bin/combine_ost_scores.py ${tool_name}
+    python3 $baseDir/bin/combine_ost_scores.py ${tool_name} ${complex}
     """
 }
 
@@ -109,7 +89,13 @@ process score_summary {
 
     script:
     """
-    echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd' > score_summary.csv
+    if [[ ! -f $launchDir/scores/score_summary.csv ]]
+    then
+        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd' > score_summary.csv
+    else
+        cp $launchDir/scores/score_summary.csv .
+    fi
+
     grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     """
 }
