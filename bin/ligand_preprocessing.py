@@ -17,7 +17,8 @@ from rdkit import rdBase
 from io import StringIO
 import csv
 
-ref_sdf_files = sys.argv[1:]
+naming = sys.argv[1]
+ref_sdf_files = sys.argv[2:]
 
 
 def uncharge(mol):
@@ -96,7 +97,6 @@ def mol_and_smiles_from_file(sdf_file, mol2_file):
     if problem and mol2_file.exists():
         print("try to use mol2 file for ligand preparation")
         mol = Chem.MolFromMol2File(ligand_mol2_name, sanitize=False)
-        problem = False
         try:
             Chem.SanitizeMol(mol)
             mol = Chem.RemoveHs(mol)
@@ -124,9 +124,7 @@ for ref in ref_sdf_files:
     stderr = sys.stderr
     sio = sys.stderr = StringIO()
 
-    pattern = re.compile("(__)")
-
-    if bool(re.search(pattern, ref)):
+    if naming == "default":
         ligand = ref.split("__")[1].split('.sdf')[0].split("_")[0]
         ligand_sdf_name = ligand + ".sdf"
         ligand_sdf_resnum_name = ref.split("__")[1]

@@ -74,7 +74,7 @@ else {
 * include the modules
 */
 
-include { ligand_preprocessing } from "./modules/prepare_ligand_sdf"
+include { ligand_preprocessing } from "./modules/ligand_preprocessing"
 include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
@@ -114,6 +114,7 @@ workflow {
         pdb_Hs = add_Hs_to_receptor(pdbs)
     }
 
+
     /*
     * binding pocket prediction
     */
@@ -121,85 +122,119 @@ workflow {
     binding_pockets = p2rank(pdb_Hs)
 
     // define box parameters for vina-like tools
+    if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/) {
+        box_size = calculate_boxSize(ligand_tuple)
 
-    box_size = calculate_boxSize(ligand_tuple)
+        identifiers.combine(pdb_Hs, by: 0)
+                   .combine(binding_pockets.pockets, by: 0)
+                   .combine(box_size.size, by: 1)
+                   .set{ input_dockingBox }
+        boxes = docking_box(input_dockingBox)
+    }
 
-    identifiers.combine(pdb_Hs, by: 0)
-               .combine(binding_pockets.pockets, by: 0)
-               .combine(box_size.size, by: 1)
-               .set{ input_dockingBox }
-    boxes = docking_box(input_dockingBox)
 
     /*
     * docking using Diffdock
     */
 
-    if (params.diffdock_mode == "batch") {
-        diffd_csv = create_diffdock_csv(ref_sdf_files.collect())
-        diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
-    }
-    else if (params.diffdock_mode == "single") {
-        if (params.naming == "default") {
-            ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+    if (params.tools =~ /diffdock/) {
+
+        if (params.diffdock_mode == "batch") {
+            diffd_csv = create_diffdock_csv(ref_sdf_files.collect())
+            diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
+        }
+        else if (params.diffdock_mode == "single") {
+            if (params.naming == "default") {
+                ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
                      .combine(pdb_Hs, by: 0)
                      .combine(sdf_for_docking.sdf_files.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
                      .set{ input_diffd_single }
-        }
-        else {
-            identifiers.combine(pdb_Hs, by: 0)
-                   .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
-                   .set{ input_diffd_single }
-        }
+            }
+            else {
+                identifiers.combine(pdb_Hs, by: 0)
+                    .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
+                    .set{ input_diffd_single }
+            }
 
-        diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+            diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+        }
     }
+    else {
+        dd_scores_for_summary = Channel.empty()
+    }
+
 
     /*
     * docking using Vina
     */
 
-    preped_ligands = vina_prepare_ligand(ligand_tuple)
-    preped_receptors = vina_prepare_receptor(pdb_Hs)
+    if (params.tools =~ /vina/) {
+        preped_ligands = vina_prepare_ligand(ligand_tuple)
+        preped_receptors = vina_prepare_receptor(pdb_Hs)
 
-    identifiers.combine(preped_receptors, by: 0)
+        identifiers.combine(preped_receptors, by: 0)
                .combine(preped_ligands.map{ [it[1], it[0]] }, by: 1)
                .map { [ it[2], it[0], it[1], it[3], it[4] ] }
                .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
                .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
                .set {vina_input}
 
-    vina_out = vina(vina_input)
-    vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
+        vina_out = vina(vina_input)
+        vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
+    }
+    else {
+        vina_scores_for_summary = Channel.empty()
+    }
+
 
     /*
     * docking using smina
     */
 
-    identifiers.combine(pdb_Hs, by: 0)
-               .combine(ligand_tuple.map{ [it[1], it[0]] }, by: 1)
-               .map { [ it[2], it[0], it[1], it[3], it[4] ] }
-               .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
-               .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
-               .set {smi_gni_input}
+    if (params.tools =~ /smina/ || params.tools =~ /gnina/) {
+        identifiers.combine(pdb_Hs, by: 0)
+                   .combine(ligand_tuple.map{ [it[1], it[0]] }, by: 1)
+                   .map { [ it[2], it[0], it[1], it[3], it[4] ] }
+                   .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
+                   .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
+                   .set {smi_gni_input}
+    }
 
-    smina_out = smina_sdf(smi_gni_input)
+    if (params.tools =~ /smina/) {
+        smina_out = smina_sdf(smi_gni_input)
+    }
+    else {
+        smina_scores_for_summary = Channel.empty()
+    }
+
 
     /*
     * docking using gnina
     */
 
-    gnina_out = gnina_sdf(smi_gni_input)
+    if (params.tools =~ /gnina/) {
+        gnina_out = gnina_sdf(smi_gni_input)
+    }
+    else {
+        gnina_scores_for_summary = Channel.empty()
+    }
+
 
     /*
     * docking using tankbind
     */
 
-    identifiers.combine(pdb_Hs, by: 0)
+    if (params.tools =~ /tankbind/) {
+        identifiers.combine(pdb_Hs, by: 0)
                .combine(binding_pockets.pockets, by: 0)
                .combine(ligand_only.map{ [it, it.simpleName.toString().split("_preped")[0]] }, by: 1)
                .set {tankbind_input}
 
-    tankbind_out = tankbind(tankbind_input)
+        tankbind_out = tankbind(tankbind_input)
+    }
+    else {
+        tb_scores_for_summary = Channel.empty()
+    }
 
 
     /*
@@ -229,40 +264,55 @@ workflow {
 
     // tankbind
 
-    reference_files.combine(tankbind_out.sdfs, by: 0)
-                   .set { tb_scoring_input }
-    tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+    if (params.tools =~ /tankbind/) {
+        reference_files.combine(tankbind_out.sdfs, by: 0)
+                       .set { tb_scoring_input }
+        tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+        tb_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ tb_scores_for_summary }
+    }
 
 
     // diffdock
-    reference_files.combine(diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
-                    .set { dd_scoring_input }
-    //if (params.alphafold == "yes") {
-    dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
+    if (params.tools =~ /diffdock/) {
+        reference_files.combine(diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
+                       .set { dd_scoring_input }
+
+        dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
+        dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
+    }
 
 
     // vina
-    reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
-                     .set { vina_scoring_input }
-    vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
+    if (params.tools =~ /vina/) {
+        reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { vina_scoring_input }
+        vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
+        vina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ vina_scores_for_summary }
+    }
 
 
     // smina
-    reference_files.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { smina_scoring_input }
-    smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+    if (params.tools =~ /smina/) {
+        reference_files.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { smina_scoring_input }
+        smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+        smina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ smina_scores_for_summary }
+    }
 
 
     // gnina
-    reference_files.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { gnina_scoring_input }
-    gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
+    if (params.tools =~ /gnina/) {
+        reference_files.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { gnina_scoring_input }
+        gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
 
+        gnina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ gnina_scores_for_summary }
+    }
 
     // create score summary file
-    overall_scores = score_summary(tb_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect().combine(
-                                   dd_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
-                                   vina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
-                                   smina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()).combine(
-                                   gnina_scores.summary.toList().flatten().filter{ it =~ /.csv/ }.collect()))
+    overall_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
+                                   dd_scores_for_summary.ifEmpty([]).combine(
+                                   vina_scores_for_summary.ifEmpty([]).combine(
+                                   smina_scores_for_summary.ifEmpty([]).combine(
+                                   gnina_scores_for_summary.ifEmpty([]))))))
 }
