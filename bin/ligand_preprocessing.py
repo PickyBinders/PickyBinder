@@ -127,12 +127,13 @@ for ref in ref_sdf_files:
     if naming == "default":
         ligand = ref.split("__")[1].split('.sdf')[0].split("_")[0]
         ligand_sdf_name = ligand + ".sdf"
+        ligand_preped = ligand + "_preped.sdf"
         ligand_sdf_resnum_name = ref.split("__")[1]
         ligand_full_name = ref.split(".sdf")[0]
         ligand_mol2_name = ligand_full_name + ".mol2"
 
-        sdf_file = Path() / f"{ligand_sdf_name}"
-        resnum_sdf_file = Path() / f"{ligand_sdf_resnum_name}"
+        sdf_file = Path() / f"{ligand_preped}"
+        resnum_sdf_file = Path() / f"{ligand_sdf_resnum_name.split('.sdf')[0]}_preped.sdf"
         mol2_file = Path() / f"{ligand_mol2_name}"
 
         if not sdf_file.exists():
@@ -158,12 +159,13 @@ for ref in ref_sdf_files:
                 try:
                     mol = Chem.AddHs(mol)
                     AllChem.EmbedMolecule(mol)
+                    AllChem.MMFFOptimizeMolecule(mol, confId=0)
                 except Exception as e:
                     print("Error: cannot embed molecule")
                     print("error: " + str(e))
                     no_embedding.append(ligand)
 
-                with Chem.SDWriter(ligand_sdf_name) as w:
+                with Chem.SDWriter(ligand_preped) as w:
                     w.write(mol)
 
                 if ligand_sdf_resnum_name != ligand_sdf_name:
@@ -209,6 +211,7 @@ for ref in ref_sdf_files:
                 try:
                     mol = Chem.AddHs(mol)
                     AllChem.EmbedMolecule(mol)
+                    AllChem.MMFFOptimizeMolecule(mol, confId=0)
                 except Exception as e:
                     print("Error: cannot embed molecule")
                     print("error: " + str(e))
