@@ -4,25 +4,10 @@
 
 params.OUTPUT = "$launchDir/diffdock"
 
-process create_diffdock_csv {
-    publishDir "$params.OUTPUT", mode: 'copy'
-    conda "${params.meeko_conda}"
-
-    input:
-    path (ref_sdf_files)
-
-    output:
-    path("protein_ligand.csv"), emit: csv_for_diffdock
-
-    script:
-    """
-    create_diffdock_csv_new.py ${params.naming} ${params.receptor_Hs} ${ref_sdf_files}
-    """
-}
-
 
 process diffdock {
-    publishDir "$params.OUTPUT", mode: 'copy', saveAs: { filename -> if (filename == ".command.log") "diffdock.log"}
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_*.log"
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "protein_ligand_withHeader.csv"
     publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_predictions/**"
     conda "${params.diffdock_conda}"
 
@@ -34,21 +19,19 @@ process diffdock {
 
     output:
     path ("diffdock_predictions/**"), emit: predictions
-    path (".command.log"), emit: diffdock_log
+    path ("diffdock_*.log")
+    path ("protein_ligand_withHeader.csv")
 
     script:
     """
-    if [ ${params.naming} != default ]
-    then
-        for file in ${pdb_files}; do receptor=\$(basename \$file .pdb | cut -d'_' -f1); mv \$file \${receptor}_receptor.pdb;done
-    fi
+    echo 'complex_name,protein_path,ligand_description,protein_sequence' > protein_ligand_withHeader.csv
+    cat ${protein_ligand_csv} >> protein_ligand_withHeader.csv
 
-    tail -n +2 ${protein_ligand_csv} | cut -d',' -f2 > receptors.txt
-    head -1 ${protein_ligand_csv} > cleaned_protein_ligand.csv
-    while read -r line; do if test -f \${line}; then grep \$line ${protein_ligand_csv} >> cleaned_protein_ligand.csv; fi;done < receptors.txt
-
-    python -m inference --protein_ligand_csv cleaned_protein_ligand.csv --out_dir diffdock_predictions \
+    python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
        --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+
+    time_date=\$(date +"%y-%m-%d-%T")
+    ln -s .command.log diffdock_\${time_date}.log
     """
 }
 

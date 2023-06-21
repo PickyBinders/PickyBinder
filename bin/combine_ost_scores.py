@@ -45,14 +45,14 @@ def combine_scores(ost_json, tool):
         ref_ligand = data['lddt_pli'][name]['reference_ligand']
 
     list_row = pd.DataFrame([[tool, complex_name, pocket, rank, lddt_pli, rmsd, ref_ligand]],
-                            columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference Ligand'])
+                            columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference_Ligand'])
     # list_row = pd.DataFrame([[tool, complex_name, pocket, rank, confidence, lddt_pli, rmsd, ref_ligand]], columns=['Tool', 'Complex', 'Pocket', 'Rank', 'dd_confidence', 'lddt_pli', 'rmsd'])
 
     return list_row
 
 
 files = [f for f in glob.glob("*.json")]
-score_df = pd.DataFrame(columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference Ligand'])
+score_df = pd.DataFrame(columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference_Ligand'])
 # score_df = pd.DataFrame(columns=['Tool', 'Complex', 'Pocket', 'Rank', 'dd_confidence', 'lddt_pli', 'rmsd', 'Reference Ligand'])
 
 for file in files:

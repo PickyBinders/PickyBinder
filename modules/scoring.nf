@@ -91,7 +91,7 @@ process score_summary {
     """
     if [[ ! -f $launchDir/scores/score_summary.csv ]]
     then
-        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd' > score_summary.csv
+        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand' > score_summary.csv
     else
         cp $launchDir/scores/score_summary.csv .
     fi

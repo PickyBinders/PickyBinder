@@ -1,14 +1,16 @@
 params {
 
         // input
-        pdb_sdf_files           = ""
+        data                    = ""
 
         alphafold               = "no"
-        ref_files               = "$params.pdb_sdf_files"
+        ref_files               = "$params.data"
 
         naming                  = "default"     // default, other
         receptor_Hs             = "no"          // yes, no
         diffdock_mode           = "batch"       // batch, single
+
+        tools                   = "diffdock,tankbind,vina,smina,gnina"
 
         // tool locations
         diffdock_tool           = "<path to DiffDock directory>"

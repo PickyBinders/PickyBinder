@@ -10,10 +10,10 @@ nextflow.enable.dsl=2
 log.info """
 PickyBinder  ~  version ${workflow.manifest.version}
 =============================================
-input directory        : ${params.pdb_sdf_files}
+input data             : ${params.data}
 input naming           : ${params.naming}
-AlphaFold models       : ${params.alphafold}
 reference files        : ${params.ref_files}
+AlphaFold models       : ${params.alphafold}
 receptor_Hs            : ${params.receptor_Hs}
 diffdock_mode          : ${params.diffdock_mode}
 """
@@ -23,51 +23,130 @@ diffdock_mode          : ${params.diffdock_mode}
 * define the input channels
 */
 
-Channel
-    .fromPath("${params.pdb_sdf_files}/*.sdf")
-    .set { ref_sdf_files }
+// check if there is a path to the input data
+if (params.data == "") {
+    println()
+    println()
+    println("Error: You have not defined any input data to run the pipeline!")
+    println("use --data <path(s)_to_data>")
+    }
 
-Channel
-    .fromPath("${params.pdb_sdf_files}/*.mol2")
-    .set { mol_files }
+// check if the input is defined in a csv and parse the csv content to create the required channels
+else if (params.data =~ /\.csv$/) {
 
-Channel
-    .fromPath("${params.pdb_sdf_files}/*.pdb")
-    .set { pdb_files }
+    Channel
+        .fromPath(params.data)
+        .splitCsv(header:true)
+        .map{ row-> tuple(file(row.receptor_path), file(row.ligand_path_sdf), file(row.ligand_path_mol2), file(row.reference_path), row.complex_name, row.BS ) }
+        .branch{
+            with_complex_name: it[4] != '' && it[4] != '-'
+            other: true
+        }
+        .set{ all_input }
 
-Channel
-    .fromPath("${params.ref_files}/*.{pdb,cif}")
-    .set { scoring_ref }
+    // define a complex name where it is not given
+    all_input.other.map{ [ it[0], it[1], it[2], it[3], it[0].simpleName + '__' + it[1].simpleName , it[5] ] }
+                   .concat(all_input.with_complex_name)
+                   .set{ all_input_defined }
+
+    // map pdb, sdf, and mol2 files
+    all_input_defined.map{ [it[0]] }.flatten().set{ pdb_files }
+    all_input_defined.map{ [it[1]] }.flatten().set{ ref_sdf_files }
+    all_input_defined.map{ [it[2]] }.filter{ it[].simpleName == /-/ }.ifEmpty( [] ).set{ mol_files }
+
+    // ref files; if none is given assign the input pdb as reference
+    all_input_defined.branch{
+                        with_ref_file: it[3] != '' && it[3] != '-'
+                        other: true
+                        }
+                        .set{ ref_definition }
+
+    ref_definition.other.map{ [it[4], it[0].simpleName, it[1].simpleName, it[0], it[0], it[1]]}         // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
+                        .concat(ref_definition.with_ref_file.map{ [it[4], it[0].simpleName, it[1].simpleName, it[3], it[0], it[1]]})
+                        .set{ scoring_ref }
+
+    // identifiers for receptor, ligand, complex names for each protein-ligand complex
+    if (params.naming == "default") {
+        //all_input_defined.map{ [it[0].simpleName, it[1].simpleName.split("__")[1].split("_")[0], it[4] ] }.set{ identifiers }
+        all_input_defined.map{ [it[0].simpleName, it[1].simpleName.split("__")[1], it[4] ] }.set{ identifiers }
+    }
+    else {
+        all_input_defined.map{ [it[0].simpleName, it[1].simpleName, it[4] ] }.set{ identifiers }
+    }
+}
+
+
+// channel definitions if input files are in one directory
+else if (params.data.split(',').size() == 1 ) {
+
+    Channel
+        .fromPath("${params.data}/*.sdf")
+        .set { ref_sdf_files }
+
+    Channel
+        .fromPath("${params.data}/*.mol2")
+        .set { mol_files }
+
+    Channel
+        .fromPath("${params.data}/*.pdb")
+        .set { pdb_files }
+
+    Channel
+        .fromPath("${params.ref_files}/*.{pdb,cif}")
+        .set { reference_files }
+
+    if (params.naming == "default") {
+        ref_sdf_files.map { [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+                     .set { identifiers }
+    }
+    else {
+        println("Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!")
+    }
+
+    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)            // receptor, ligand, complex, ref_receptor_file
+               .combine(pdb_files.map{ [it.simpleName, it] }, by: 0)                // receptor, ligand, complex, ref_receptor_file, model_receptor_file
+               .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .set{ scoring_ref }
+}
+
+// channel definitions if input files are in two directories
+else if (params.data.split(',').size() == 2 ) {
+
+    Channel
+        .fromPath("${params.data}".split(',')[1] + "/*.sdf")
+        .set { ref_sdf_files }
+
+    Channel
+        .fromPath("${params.data}".split(',')[1] + "/*.mol2")
+        .set { mol_files }
+
+    Channel
+        .fromPath("${params.data}".split(',')[0] + "/*.pdb")
+        .set { pdb_files }
+
+    Channel
+        .fromPath("${params.ref_files}".split(',')[0] + "/*.{pdb,cif}")
+        .set { reference_files }
+
+    if (params.naming == "default") {
+        ref_sdf_files.map { [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
+                     .set { identifiers }
+    }
+    else {
+        println("Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!")
+    }
+
+    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)            // receptor, ligand, complex, ref_receptor_file
+               .combine(pdb_files.map{ [it.simpleName, it] }, by: 0)                // receptor, ligand, complex, ref_receptor_file, model_receptor_file
+               .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .set{ scoring_ref }
+}
 
 Channel
     .fromPath("${params.diffdock_tool}/*", type: 'any')
     .set { diffd_tool }
-
-if (params.receptor_Hs == "yes" && params.naming == "default") {
-    Channel
-        .fromPath("${params.pdb_sdf_files}/*.pdb")
-        .map { [it.simpleName, it] }
-        .set { pdb_Hs }
-}
-else if (params.receptor_Hs == "yes" && params.naming == "other") {
-    Channel
-        .fromPath("${params.pdb_sdf_files}/*.pdb")
-        .map { [it.simpleName.split("_")[0], it] }
-        .set { pdb_Hs }
-}
-
-/*
-* define identifiers to combine the files: receptor name , ligand name, complex name
-*/
-
-if (params.naming == "default") {
-    ref_sdf_files.map { [it.simpleName.split("__")[0], it.simpleName.split("__")[1].split("_")[0], it.simpleName] }
-                 .set { identifiers }
-}
-else {
-    ref_sdf_files.map { [it.simpleName.split("_")[0], it.simpleName, it.simpleName] }
-                 .set { identifiers }
-}
 
 
 /*
@@ -79,7 +158,7 @@ include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_box } from "./modules/docking_box"
-include { create_diffdock_csv; diffdock; diffdock_single } from "./modules/diffdock"
+include { diffdock; diffdock_single } from "./modules/diffdock"
 include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
 include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
@@ -98,20 +177,22 @@ workflow {
     * preprocessing
     */
 
-    sdf_for_docking = ligand_preprocessing(ref_sdf_files.collect(), mol_files.collect().ifEmpty([]))
+    // ligand preprocessing
+    sdf_for_docking = ligand_preprocessing(ref_sdf_files.unique().collect(), mol_files.unique().collect().ifEmpty([]))
 
-    if (params.naming == "default") {
-        sdf_for_docking.sdf_files.flatten().filter{!(it.simpleName =~ /_/)}.set { ligand_only }
-        ligand_only.map{ [it.simpleName, it] }.set { ligand_tuple }
+    sdf_for_docking.sdf_files.flatten()
+                             .map{ [it.simpleName.toString().split("_preped")[0], it] }
+                             .combine(identifiers.map{ it[1] }, by: 0)
+                             .unique()
+                             .set { ligand_tuple }
+    ligand_tuple.map{ it[1] }.set { ligand_only }
+
+    // add Hs to receptor
+    if (params.receptor_Hs == "no") {
+        pdb_Hs = add_Hs_to_receptor(pdb_files.unique().map{ [it.simpleName, it] } )
     }
     else {
-        sdf_for_docking.sdf_files.flatten().set{ ligand_only }
-        ligand_only.map{ [it.simpleName.toString().split("_preped")[0], it] }.set{ ligand_tuple }
-    }
-
-    if (params.receptor_Hs == "no") {
-        pdb_files.filter{(it.simpleName =~ /_/)}.map{[it.baseName, it]}.set{ pdbs }
-        pdb_Hs = add_Hs_to_receptor(pdbs)
+        pdb_files.unique().map { [it.simpleName, it] }.set{ pdb_Hs }
     }
 
 
@@ -119,12 +200,12 @@ workflow {
     * binding pocket prediction
     */
 
+    // predict binding pockets
     binding_pockets = p2rank(pdb_Hs)
 
     // define box parameters for vina-like tools
     if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/) {
         box_size = calculate_boxSize(ligand_tuple)
-
         identifiers.combine(pdb_Hs, by: 0)
                    .combine(binding_pockets.pockets, by: 0)
                    .combine(box_size.size, by: 1)
@@ -140,21 +221,23 @@ workflow {
     if (params.tools =~ /diffdock/) {
 
         if (params.diffdock_mode == "batch") {
-            diffd_csv = create_diffdock_csv(ref_sdf_files.collect())
+
+            identifiers.combine(pdb_Hs, by: 0)
+                       .combine(ligand_tuple.map{ [it[1], it[0]]}, by: 1)
+                       .map{ [it[2], it[3].name.toString(), it[4].name.toString()] }
+                       .collectFile() {item ->
+                            [ "protein_ligand.csv", item[0] + "," + item[1] + "," + item[2] + ",\n"]
+                       }
+                       .set{ diffd_csv }
+
             diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
         }
+
         else if (params.diffdock_mode == "single") {
-            if (params.naming == "default") {
-                ref_sdf_files.map{ [it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName] }
-                     .combine(pdb_Hs, by: 0)
-                     .combine(sdf_for_docking.sdf_files.flatten().map{file -> tuple(file, file.simpleName)}, by: 1)
-                     .set{ input_diffd_single }
-            }
-            else {
-                identifiers.combine(pdb_Hs, by: 0)
-                    .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
-                    .set{ input_diffd_single }
-            }
+
+            identifiers.combine(pdb_Hs, by: 0)
+                       .combine(ligand_tuple.map{ [ it[1], it[0] ] }, by: 1)
+                       .set{ input_diffd_single }
 
             diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
         }
@@ -172,12 +255,12 @@ workflow {
         preped_ligands = vina_prepare_ligand(ligand_tuple)
         preped_receptors = vina_prepare_receptor(pdb_Hs)
 
-        identifiers.combine(preped_receptors, by: 0)
-               .combine(preped_ligands.map{ [it[1], it[0]] }, by: 1)
-               .map { [ it[2], it[0], it[1], it[3], it[4] ] }
-               .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
-               .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
-               .set {vina_input}
+        identifiers.combine(preped_receptors, by: 0)                                // receptor, ligand, complex, preped_receptor
+                   .combine(preped_ligands.map{ [it[1], it[0]] }, by: 1)            // ligand, receptor, complex, preped_receptor, preped_ligand
+                   .map { [ it[2], it[0], it[1], it[3], it[4] ] }                   // complex, ligand, receptor, preped_receptor, preped_ligand
+                   .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)    // complex, ligand, receptor, preped_receptor, preped_ligand, box_file
+                   .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }            // complex, ligand, receptor, pocket, preped_receptor, preped_ligand, box_file
+                   .set {vina_input}
 
         vina_out = vina(vina_input)
         vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
@@ -226,9 +309,9 @@ workflow {
 
     if (params.tools =~ /tankbind/) {
         identifiers.combine(pdb_Hs, by: 0)
-               .combine(binding_pockets.pockets, by: 0)
-               .combine(ligand_only.map{ [it, it.simpleName.toString().split("_preped")[0]] }, by: 1)
-               .set {tankbind_input}
+                   .combine(binding_pockets.pockets, by: 0)
+                   .combine(ligand_only.map{ [it, it.simpleName.toString().split("_preped")[0]] }, by: 1)
+                   .set {tankbind_input}
 
         tankbind_out = tankbind(tankbind_input)
     }
@@ -241,32 +324,19 @@ workflow {
     * ost scoring
     */
 
-    if (params.naming == "default") {
-            scoring_ref.map{ [it.simpleName.split("_")[0], it] }
-                         .combine(pdb_files.map{ [it.simpleName.split("_")[0], it.baseName, it] }, by: 0)
-                         .map { [ it[2], it[1], it[3] ] }
-                         .set{ ref_for_scoring }
-    }
-    else {
-            scoring_ref.map{ [it.simpleName.split("_")[0], it] }
-                         .combine(pdb_files.map{ [it.simpleName.split("_")[0], it] }, by: 0)
-                         .set{ ref_for_scoring }
-    }
+    // scoring the modelled receptors
 
     if (params.alphafold == "yes") {
-            modelled_receptors_scores = ost_scoring_modelReceptors(ref_for_scoring)
-            modelled_receptors_scores_summary = combine_modelReceptors_scores(modelled_receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
+        modelled_receptors_scores = ost_scoring_modelReceptors(scoring_ref.map{ [it[1], it[3], it[4]] }.unique())
+        modelled_receptors_scores_summary = combine_modelReceptors_scores(modelled_receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
     }
 
-    identifiers.combine(ref_for_scoring, by: 0).map { [ it[2], it[0], it[1], it[3], it[4] ] }       // complex, receptor, ligand, ref pdb file, model pdb file
-               .combine(ref_sdf_files.map { [it.simpleName, it] }, by: 0)    // complex, receptor, ligand, ref pdb file, model pdb file, ref_lig file
-               .set { reference_files }
 
     // tankbind
 
     if (params.tools =~ /tankbind/) {
-        reference_files.combine(tankbind_out.sdfs, by: 0)
-                       .set { tb_scoring_input }
+        scoring_ref.combine(tankbind_out.sdfs, by: 0)
+                   .set { tb_scoring_input }
         tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
         tb_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ tb_scores_for_summary }
     }
@@ -274,9 +344,8 @@ workflow {
 
     // diffdock
     if (params.tools =~ /diffdock/) {
-        reference_files.combine(diffdock_predictions.predictions.flatten().map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
-                       .set { dd_scoring_input }
-
+        scoring_ref.combine(diffdock_predictions.predictions.flatten().filter{ it =~ /\// }.map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
+                   .set { dd_scoring_input }
         dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
         dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
     }
@@ -284,8 +353,8 @@ workflow {
 
     // vina
     if (params.tools =~ /vina/) {
-        reference_files.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
-                       .set { vina_scoring_input }
+        scoring_ref.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { vina_scoring_input }
         vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
         vina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ vina_scores_for_summary }
     }
@@ -293,8 +362,8 @@ workflow {
 
     // smina
     if (params.tools =~ /smina/) {
-        reference_files.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
-                       .set { smina_scoring_input }
+        scoring_ref.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { smina_scoring_input }
         smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
         smina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ smina_scores_for_summary }
     }
@@ -302,10 +371,9 @@ workflow {
 
     // gnina
     if (params.tools =~ /gnina/) {
-        reference_files.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
-                       .set { gnina_scoring_input }
+        scoring_ref.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
+                   .set { gnina_scoring_input }
         gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
-
         gnina_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ gnina_scores_for_summary }
     }
 

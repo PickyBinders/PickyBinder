@@ -30,16 +30,11 @@ from generation_utils import get_LAS_distance_constraint_mask, get_info_pred_dis
 
 # renaming input
 complex_name = sys.argv[2]
-protein_file = sys.argv[3]
-ligand_file = sys.argv[4]
-p2rank_predictions = sys.argv[5]
-naming = sys.argv[6]
-
-if naming == 'default':
-    pdb, ligand = complex_name.split('__')
-else:
-    pdb = complex_name.split('_')[0]
-    ligand = complex_name
+pdb = sys.argv[3]
+protein_file = sys.argv[4]
+ligand = sys.argv[5]
+ligand_file = sys.argv[6]
+p2rank_predictions = sys.argv[7]
 
 # get protein feature
 parser = PDBParser(QUIET=True)
