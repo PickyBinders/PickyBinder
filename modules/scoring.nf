@@ -92,10 +92,11 @@ process score_summary {
     if [[ ! -f $launchDir/scores/score_summary.csv ]]
     then
         echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand' > score_summary.csv
+        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     else
-        cp $launchDir/scores/score_summary.csv .
+        cp $launchDir/scores/score_summary.csv score_summary_old.csv
+        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary_old.csv
+        sort score_summary_old.csv | uniq > score_summary.csv
     fi
-
-    grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     """
 }
