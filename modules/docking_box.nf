@@ -2,7 +2,7 @@
 *  docking_box module 
 */
 
-params.OUTPUT = "$launchDir/boxes"
+params.OUTPUT = "$launchDir/preprocessing/boxes"
 
 
 process docking_boxes_predicted_pockets {

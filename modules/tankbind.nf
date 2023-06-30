@@ -2,7 +2,7 @@
 *  tankbind module
 */
 
-params.OUTPUT = "$launchDir/tankbind"
+params.OUTPUT = "$launchDir/predictions/tankbind"
 
 process tankbind {
     publishDir "$params.OUTPUT/${complex}", pattern: "tankbind_predictions/*", mode: 'copy'

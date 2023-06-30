@@ -2,7 +2,7 @@
 *  gnina module
 */
 
-params.OUTPUT = "$launchDir/gnina"
+params.OUTPUT = "$launchDir/predictions/gnina"
 
 process gnina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'

@@ -5,7 +5,7 @@
 params.OUTPUT = "$launchDir/scores"
 
 process ost_scoring {
-    publishDir "$params.OUTPUT/${complex}/${tool_name}", mode: 'copy'
+    publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
     container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
     tag { complex }

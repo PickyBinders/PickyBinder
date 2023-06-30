@@ -2,7 +2,7 @@
 *  calculate_boxSize module 
 */
 
-params.OUTPUT = "$launchDir/boxes/box_size"
+params.OUTPUT = "$launchDir/preprocessing/boxes/box_size"
 
 process calculate_boxSize {
     publishDir "$params.OUTPUT", pattern: "*_boxSize.txt", mode: 'copy'

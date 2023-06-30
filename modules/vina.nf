@@ -2,7 +2,7 @@
 *  vina module
 */
 
-params.OUTPUT = "$launchDir/vina"
+params.OUTPUT = "$launchDir/predictions/vina"
 
 process vina_prepare_receptor {
     publishDir "$params.OUTPUT/prepared_receptors", mode: 'copy'
@@ -63,7 +63,7 @@ process vina {
 
 
 process pdbtqToSdf {
-    publishDir "$launchDir/${tool_name}/${tool_name}_predictions/${complex}/${pocket_nr}", mode: 'copy'
+    publishDir "$params.OUTPUT/vina_predictions/${complex}/${pocket_nr}", mode: 'copy'
     conda "${params.meeko_conda}"
     tag { complex }
     

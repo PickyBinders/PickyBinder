@@ -2,7 +2,7 @@
 *  p2rank module 
 */
 
-params.OUTPUT = "$launchDir/p2rank"
+params.OUTPUT = "$launchDir/preprocessing/p2rank"
 
 process p2rank {
     publishDir "$params.OUTPUT/${receptor}", mode: 'copy'

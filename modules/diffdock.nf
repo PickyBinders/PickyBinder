@@ -2,7 +2,7 @@
 *  diffdock module
 */
 
-params.OUTPUT = "$launchDir/diffdock"
+params.OUTPUT = "$launchDir/predictions/diffdock"
 
 
 process diffdock {

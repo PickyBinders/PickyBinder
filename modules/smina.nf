@@ -2,7 +2,7 @@
 *  smina module
 */
 
-params.OUTPUT = "$launchDir/smina"
+params.OUTPUT = "$launchDir/predictions/smina"
 
 process smina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
