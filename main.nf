@@ -73,6 +73,14 @@ else if (params.data =~ /\.csv$/) {
     else {
         all_input_defined.map{ [it[0].simpleName, it[1].simpleName, it[4] ] }.set{ identifiers }
     }
+
+    // get complexes with defined binding site
+    all_input_defined.branch{
+                        with_bs: it[5] != '' && it[5] != '-'
+                        other: true
+                        }
+                        .set{ binding_sites }
+    params.BS = true
 }
 
 
@@ -108,6 +116,8 @@ else if (params.data.split(',').size() == 1 ) {
                .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
                .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
                .set{ scoring_ref }
+
+    params.BS = false
 }
 
 // channel definitions if input files are in two directories
@@ -142,8 +152,11 @@ else if (params.data.split(',').size() == 2 ) {
                .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
                .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
                .set{ scoring_ref }
+
+    params.BS = false
 }
 
+// add Diffdock dependencies
 Channel
     .fromPath("${params.diffdock_tool}/*", type: 'any')
     .set { diffd_tool }
@@ -157,7 +170,7 @@ include { ligand_preprocessing } from "./modules/ligand_preprocessing"
 include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
-include { docking_box } from "./modules/docking_box"
+include { docking_boxes_predicted_pockets; docking_box_defined_BS } from "./modules/docking_box"
 include { diffdock; diffdock_single } from "./modules/diffdock"
 include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
 include { gnina_sdf } from "./modules/gnina"
@@ -206,11 +219,38 @@ workflow {
     // define box parameters for vina-like tools
     if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/) {
         box_size = calculate_boxSize(ligand_tuple)
-        identifiers.combine(pdb_Hs, by: 0)
-                   .combine(binding_pockets.pockets, by: 0)
-                   .combine(box_size.size, by: 1)
-                   .set{ input_dockingBox }
-        boxes = docking_box(input_dockingBox)
+
+        if (params.BS) {
+            // boxes without defined BS
+            binding_sites.other.map{ [it[4]] }                               // complex
+                               .combine(identifiers.map{ [it[2], it[0], it[1]] }, by: 0).map{ [it[1], it[2], it[0]] }     // receptor, ligand, complex
+                               .combine(pdb_Hs, by: 0)                      // receptor, ligand, complex, pdb_Hs
+                               .combine(binding_pockets.pockets, by: 0)     // receptor, ligand, complex, pdb_Hs, binding_pockets
+                               .combine(box_size.size, by: 1)               // ligand, receptor, complex, pdb_Hs, binding_pockets, box_size
+                               .set{ input_dockingBox_no_BS }
+
+            boxes_no_BS = docking_boxes_predicted_pockets(input_dockingBox_no_BS)
+
+            // boxes with defined BS
+            binding_sites.with_bs.map{ [it[4], it[5]] }                     // complex, BS
+                                 .combine(identifiers.map{ [it[2], it[0], it[1]] }, by: 0).map{ [it[2], it[3], it[0], it[1]] }     // receptor, ligand, complex, BS
+                                 .combine(pdb_Hs, by: 0)                    // receptor, ligand, complex, BS, pdb_Hs
+                                 .combine(box_size.size, by: 1)             // ligand, receptor, complex, BS, pdb_Hs, box_size
+                                 .map{ [it[0], it[1], it[2], it[4], it[3], it[5]] }      // ligand, receptor, complex, pdb_Hs, BS, box_size
+                                 .set{ input_dockingBox_with_BS }
+
+            boxes_BS = docking_box_defined_BS(input_dockingBox_with_BS)
+
+            // concatenate boxes_no_BS and boxes_BS channels
+            boxes = boxes_no_BS.concat(boxes_BS)
+        }
+        else {
+            identifiers.combine(pdb_Hs, by: 0)
+                       .combine(binding_pockets.pockets, by: 0)
+                       .combine(box_size.size, by: 1)
+                       .set{ input_dockingBox }
+            boxes = docking_boxes_predicted_pockets(input_dockingBox)
+        }
     }
 
 
