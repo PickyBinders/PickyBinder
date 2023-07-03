@@ -1,10 +1,16 @@
 # PickyBinder
-This repository contains the implementation of the PickyBinder workflow, 
-a workflow to benchmark protein-ligand interaction prediction methods.
+This repository contains the implementation of the PickyBinder workflow, a workflow to benchmark 
+protein-ligand interaction prediction methods.
+
+The workflow assesses the state-of-the-art protein-ligand complex prediction tools 
+Autodock Vina, SMINA, GNINA, DiffDock, and TANKBind. It reports the BiSyRMSD and the 
+lDDT-PLI scores calculated with OpenStructure for each predicted ligand pose. For docking tools associated with the 
+AutoDock family, the workflow conducts besides blind docking also ligand prediction either
+for all binding pockets identified by P2Rank or for a specific user-defined binding site.
 
 ## Overview
 
-This is a nextflow pipeline. Information about Nextflow can be found here https://www.nextflow.io/ 
+PickyBinder a nextflow pipeline. Information about Nextflow can be found here https://www.nextflow.io/ 
 and in the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html).   
 
 The workflow of the pipeline is defined in the **main.nf** file. The underlying processes 
@@ -40,7 +46,7 @@ or make an own Conda environment for meeko (https://pypi.org/project/meeko/#2.-r
 
 ### Other tools
 - **P2Rank**: Get P2Rank v2.4 executable from https://github.com/rdk/p2rank/releases .
-- **OpenStrucutre**: Get Singularity image for OpenStructure 2.4.0 from https://git.scicore.unibas.ch/schwede/openstructure/container_registry/7
+- **OpenStructure**: Get Singularity image for OpenStructure 2.4.0 from https://git.scicore.unibas.ch/schwede/openstructure/container_registry/7
 - **ADFRsuite**: Build Singularity image from the definition file in the Singularity directory. 
 
 ### Preparation of the params.config file
@@ -51,18 +57,67 @@ Copy the params.config.in to params.config and adjust the following:
 - The **cluster options** section gives the possibility to name the queues, partitions, and other desired SLURM options.
 Memory and time are already defined. 
 
+## Input definition
+
+The workflow can be run with multiple complexes at once. For each complex a receptor pdb file and a ligand sdf file
+must be provided. As reference for the BiSyRMSD and lDDT-PLI scoring with OpenStructure it is best to use the mmCIF file 
+of the receptor. But it is also possible to give a pdb file as the reference. 
+If the reference file is a pdb file, then the ligand sdf file is used as the reference ligand.
+
+The input for the pipeline can be allocated in two ways, either prepare a csv file containing
+the paths to the relevant files and additional information 
+or provide directories for receptor, ligand and reference files.  
+
+### CSV file
+
+The csv file needs to have a header row with the following column names: 
+**complex_name,receptor_path,ligand_path_sdf,ligand_path_mol2,reference_path,BS** 
+
+| Column           |                    Content                                | Description                                                                                                                                                                                                  |
+|:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| complex_name     | name used to save predictions                             | if empty the names of the receptor and the ligand will be combined                                                                                                                                           |
+| receptor_path    | full path to the receptor pdb file                        |                                                                                                                                                                                                              |
+| ligand_path_sdf  | full path to the ligand sdf file                          |                                                                                                                                                                                                              |
+| ligand_path_mol2 | full path to ligand mol2 file                             | if the ligand preprocessing fails using the sdf file, ligand preprocessing is retried with the mol2 file. Put a `-` if no mol2 file is available.                                                            |
+| reference_path   | full path to the reference file for scoring               | provide either a mmCIF or a pdb file; If no path is given, the receptor pdb file is used as the reference.                                                                                                   |
+| BS               | x-coordinate_y-coordinate_z-coordinate                    | coordinates of the binding site center; leave empty to use binding pockets predicted by P2Rank                                                                                                               |
+
+Use the workflow option ```--data <input>.csv``` to run the workflow. 
+
+### Input directories
+
+To use the option to give simply a directory with the files as input, the files need to have the following naming pattern:
+
+| Receptor        | Ligand                      | Reference           |
+|:----------------|:----------------------------|:--------------------|
+| pdbID.pdb       | pdbID__ligandName.sdf       | pdbID.cif/pdb       |
+| pdbID_Chain.pdb | pdbID_Chain__ligandName.sdf | pdbID_Chain.cif/pdb |
+
+**Receptor** and **ligand** files can be in the same directory or in separate ones. 
+
+Use the workflow option ```--data <path_to_pdb-sdf-files> ``` for one directory with all input files   
+or ```--data <path_to_pdb-files>,<path_to_sdf-files> ``` for two separate directories.
+
+The **reference** files need to be in a different directory. Use the workflow option   
+```--ref_files <path_to_reference-files> ```
+
+If the input receptor files should be used as the reference, then the workflow option ```--ref_files```
+can be omitted. 
+
+The option to give a specific binding site for the docking tools of the AutoDock family is not available 
+when using directories for the input definition. 
+
 ## Running the workflow
 
-The workflow takes as input a directory containing receptor.pdb and ligand.sdf files. If the analysis is run on 
-AlphaFold modeled receptors, a directory with reference pdb files needs to be provided to do the scoring. 
-
-The general command to run the pipeline:
+General command to run the pipeline:
 
 ```
 nextflow run <path-to-PickyBinder-directory>/main.nf -profile slurm -with-report report.html <Nextflow options> <Workflow options>
 ```
 
-The workflow execution was built to run with SLURM, but it is also possible to run it locally (remove **-profile slurm**).
+The workflow execution was built to run with SLURM, but it is also possible to run it locally (remove **-profile slurm**)
+or to define a profile for another executor in the nextflow.config file 
+(check [Nextflow documentation](https://www.nextflow.io/docs/latest/executor.html) for help).
 
 Available options:
 
@@ -72,17 +127,24 @@ Nextflow options:
 -with-dag arg               generates a dag of the workflow: <name>.pdf, <name>.html    
 
 Workflow options:
---pdb_sdf_files	arg         path to pdb and sdf files
---naming arg                naming of the input files: 
-                                default (pdbID_Chain__ligandName.sdf), 
-                                other (ligand needs to have a common identifier with the receptor at 
-                                       the start followed by a '_' eg. 6m7h.pdb and 6m7h_ligand.sdf)
+--data arg                  csv file or path to pdb and sdf input files
+--naming arg                naming of the input files: default, other
+                                default (<pdbID_Chain>.pdb, <pdbID_Chain>__<ligandName>.sdf, <pdbID_Chain>.cif/pdb)
+
+--ref_files arg             path to reference files 
+                                                 
 --receptor_Hs arg           are the input pdbs hydrated: no (default), yes
 --alphafold arg             are the receptors AlphaFold modelled strucures: no (default), yes
---ref_files arg             path to receptor reference files when running workflow with 
-                            AlphaFold modelled receptors
+
+--tools arg                 comma-separated list of the docking tools to run, default is to run all available tools:
+                            --> diffdock,tankbind,vina,smina,gnina
+
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
 --autobox_add arg           amount of buffer space to add on each side od the box (default 10)
 ```
 
+## Outputs
 
+The BiSyRMSD and lDDT-PLI of all predicted poses can be found in the score_summary.csv in the ```scores``` directory. 
+
+All predicted ligand poses can be found in the ```predictions``` directory. 
