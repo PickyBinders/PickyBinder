@@ -73,7 +73,7 @@ or provide directories for receptor, ligand and reference files.
 The csv file needs to have a header row with the following column names: 
 **complex_name,receptor_path,ligand_path_sdf,ligand_path_mol2,reference_path,BS** 
 
-| Column           |                    Content                                | Description                                                                                                                                                                                                  |
+| Column           |                       Content                                | Description                                                                                                                                                                                                  |
 |:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | complex_name     | name used to save predictions                             | if empty the names of the receptor and the ligand will be combined                                                                                                                                           |
 | receptor_path    | full path to the receptor pdb file                        |                                                                                                                                                                                                              |
@@ -127,16 +127,17 @@ Nextflow options:
 -with-dag arg               generates a dag of the workflow: <name>.pdf, <name>.html    
 
 Workflow options:
---data arg                  csv file or path to pdb and sdf input files
+--data arg                  <input>.csv, <path_to_pdb-sdf-files>, or <path_to_pdb-files>,<path_to_sdf-files>                           
 --naming arg                naming of the input files: default, other
-                                default (<pdbID_Chain>.pdb, <pdbID_Chain>__<ligandName>.sdf, <pdbID_Chain>.cif/pdb)
+                            default: <pdbID_Chain>.pdb, <pdbID_Chain>__<ligandName>.sdf, <pdbID_Chain>.cif/pdb
 
 --ref_files arg             path to reference files 
                                                  
 --receptor_Hs arg           are the input pdbs hydrated: no (default), yes
 --alphafold arg             are the receptors AlphaFold modelled strucures: no (default), yes
 
---tools arg                 comma-separated list of the docking tools to run, default is to run all available tools:
+--tools arg                 comma-separated list of the docking tools to run, default is to 
+                            run all available tools:
                             --> diffdock,tankbind,vina,smina,gnina
 
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
