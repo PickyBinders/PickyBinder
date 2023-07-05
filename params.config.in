@@ -22,10 +22,10 @@ params {
         diffdock_conda          = "<path to DiffDock conda env>"
         meeko_conda             = "<path to Meeko conda env>"
         vina_conda              = "<path to Autodock Vina conda env>"
-        smina_conda             = "<path to SMINA conda env>"
 
         // singularity images
         tankbind_sing           = "<path to TANKBind Singularity img>"
+        smina_sing              = "<path to SMINA Singularity img>"
         gnina_sing              = "<path to GNINA Singularity img>"
         adfr_sing               = "<path to ADFR Singularity img>"
         ost_sing                = "<path to OpenStrucutre Singularity img>"
