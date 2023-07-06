@@ -123,7 +123,7 @@ def box_for_defined_bs(complex_name, box_size, bs_coordinates):
 
     box = [center_x, center_y, center_z, size_x, size_y, size_z]
 
-    pocket = "BS"
+    pocket = "pocketBS"
     pocket_file = Path() / f"{complex_name}_{pocket}.box"
 
     with open(pocket_file, 'w+') as f:
