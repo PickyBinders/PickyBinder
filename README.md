@@ -40,7 +40,8 @@ and create a Conda environment for the Python bindings as described in the Autod
 (https://autodock-vina.readthedocs.io/en/latest/installation.html). Either install **meeko** 0.4.0 into the same Conda environment, 
 or make an own Conda environment for meeko (https://pypi.org/project/meeko/#2.-rdkit-molecule-from-docking-results).
 - **SMINA**: Get the Singularity image for SMINA v2020.12.10 (https://hub.docker.com/r/zengxinzhy/smina, tag:1.0). 
-- **GNINA**: Get the Singularity image for GNINA v1.0.2 (https://hub.docker.com/r/nmaus/gnina , digest: 7087cbf4dafd).
+- **GNINA**: Get the Singularity image for GNINA v1.0.3 (https://hub.docker.com/r/marcus905/gnina-12/tags, digest: ea3dce32d4a5)
+or GNINA v1.0.2 (https://hub.docker.com/r/nmaus/gnina , digest: 7087cbf4dafd).
 - **DiffDock**: Create a Conda environment according to the setup guide at https://github.com/gcorso/DiffDock (commit 2c7d438).
 - **TANKBind**: Get Singularity image "tankbind_py38" (https://hub.docker.com/r/qizhipei/tankbind_py38, digest: 79a46540b547). 
 
