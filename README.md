@@ -35,18 +35,19 @@ The workflow has been tested using Nextflow 20.10.0. Get Nextflow from https://w
 
 ### Protein-ligand prediction tools
 
-- **Autodock Vina**: Get the Autodock Vina v1.2.3 executable from https://github.com/ccsb-scripps/AutoDock-Vina/releases 
+- **Autodock Vina**: Get the Autodock Vina v1.2.5 executable from https://github.com/ccsb-scripps/AutoDock-Vina/releases 
 and create a Conda environment for the Python bindings as described in the Autodock Vina manual 
 (https://autodock-vina.readthedocs.io/en/latest/installation.html). Either install **meeko** 0.4.0 into the same Conda environment, 
 or make an own Conda environment for meeko (https://pypi.org/project/meeko/#2.-rdkit-molecule-from-docking-results).
-- **SMINA**: Creat a Conda environment for SMINA v2020.12.10 (https://anaconda.org/conda-forge/smina). 
-- **GNINA**: Get the Singularity image for GNINA v1.0.2 (https://hub.docker.com/r/nmaus/gnina , digest: 7087cbf4dafd).
+- **SMINA**: Get the Singularity image for SMINA v2020.12.10 (https://hub.docker.com/r/zengxinzhy/smina, tag:1.0).
+- **GNINA**: Get the Singularity image for GNINA v1.0.3 (https://hub.docker.com/r/marcus905/gnina-12/tags, digest: ea3dce32d4a5)
+or GNINA v1.0.2 (https://hub.docker.com/r/nmaus/gnina , digest: 7087cbf4dafd).
 - **DiffDock**: Create a Conda environment according to the setup guide at https://github.com/gcorso/DiffDock (commit 2c7d438).
 - **TANKBind**: Get Singularity image "tankbind_py38" (https://hub.docker.com/r/qizhipei/tankbind_py38, digest: 79a46540b547). 
 
 ### Other tools
 - **P2Rank**: Get P2Rank v2.4 executable from https://github.com/rdk/p2rank/releases .
-- **OpenStructure**: Get Singularity image for OpenStructure 2.4.0 from https://git.scicore.unibas.ch/schwede/openstructure/container_registry/7
+- **OpenStructure**: Get Singularity image for OpenStructure 2.5.0 from https://git.scicore.unibas.ch/schwede/openstructure/container_registry/7
 - **ADFRsuite**: Build Singularity image from the definition file in the Singularity directory. 
 
 ### Preparation of the params.config file
@@ -73,7 +74,7 @@ or provide directories for receptor, ligand and reference files.
 The csv file needs to have a header row with the following column names: 
 **complex_name,receptor_path,ligand_path_sdf,ligand_path_mol2,reference_path,BS** 
 
-| Column           |                       Content                                | Description                                                                                                                                                                                                  |
+| Column           |                         Content                                | Description                                                                                                                                                                                                  |
 |:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | complex_name     | name used to save predictions                             | if empty the names of the receptor and the ligand will be combined                                                                                                                                           |
 | receptor_path    | full path to the receptor pdb file                        |                                                                                                                                                                                                              |
@@ -123,6 +124,8 @@ Available options:
 
 ```
 Nextflow options:
+-resume                     resume the pipeline
+-c                          give a local configuration file instead of the nextflow.config file
 -with-timeline arg          generates a timeline file at the end of the workflow: <name>.html
 -with-dag arg               generates a dag of the workflow: <name>.pdf, <name>.html    
 
