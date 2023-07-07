@@ -24,10 +24,10 @@ process ost_scoring {
     do
         if [[ ${ref_receptor} == *.pdb ]]
         then
-            ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
+            ost compare-ligand-structures --substructure-match -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
         elif [[ ${ref_receptor} == *.cif ]]
         then
-            ost compare-ligand-structures -m ${model_receptor} -ml \${model} -r ${ref_receptor} -o \${model%.sdf}.json --lddt-pli --rmsd
+            ost compare-ligand-structures --substructure-match -m ${model_receptor} -ml \${model} -r ${ref_receptor} -o \${model%.sdf}.json --lddt-pli --rmsd
         fi
     done
 
