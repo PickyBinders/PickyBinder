@@ -111,10 +111,10 @@ else if (params.data.split(',').size() == 1 ) {
         println("Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!")
     }
 
-    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)            // receptor, ligand, complex, ref_receptor_file
+    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)          // receptor, ligand, complex, ref_receptor_file
                .combine(pdb_files.map{ [it.simpleName, it] }, by: 0)                // receptor, ligand, complex, ref_receptor_file, model_receptor_file
                .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
-               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
                .set{ scoring_ref }
 
     params.BS = false
@@ -147,10 +147,10 @@ else if (params.data.split(',').size() == 2 ) {
         println("Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!")
     }
 
-    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)            // receptor, ligand, complex, ref_receptor_file
+    identifiers.combine(reference_files.map{ [it.simpleName, it] }, by: 0)          // receptor, ligand, complex, ref_receptor_file
                .combine(pdb_files.map{ [it.simpleName, it] }, by: 0)                // receptor, ligand, complex, ref_receptor_file, model_receptor_file
                .combine(ref_sdf_files.map{ [it , it.simpleName.split("__")[1]] }, by: 1)      // ligand, receptor, complex, ref_receptor_file, model_receptor_file, ref_ligand_file
-               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }.view()                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
+               .map{ [it[2], it[1], it[0], it[3], it[4], it[5]] }                   // complex, receptor, ligand, ref_receptor_file, model_receptor_file, ref_ligand_file
                .set{ scoring_ref }
 
     params.BS = false
@@ -177,7 +177,7 @@ include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; score_summary } from "./modules/scoring"
-include { ost_scoring_modelReceptors; combine_modelReceptors_scores } from "./modules/scoring"
+include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 
 
 /*
@@ -366,9 +366,9 @@ workflow {
 
     // scoring the modelled receptors
 
-    if (params.alphafold == "yes") {
-        modelled_receptors_scores = ost_scoring_modelReceptors(scoring_ref.map{ [it[1], it[3], it[4]] }.unique())
-        modelled_receptors_scores_summary = combine_modelReceptors_scores(modelled_receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
+    if (params.scoring_receptors == "yes") {
+        receptors_scores = ost_scoring_receptors(scoring_ref.map{ [it[1], it[3], it[4]] }.unique())
+        receptors_scores_summary = combine_receptors_scores(receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
     }
 
 

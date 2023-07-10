@@ -12,6 +12,12 @@ params {
 
         tools                   = "diffdock,tankbind,vina,smina,gnina"
 
+        // scoring
+        scoring_receptors       = "no"          // yes, no
+
+        // parameters
+        autobox_add             = "10"
+
         // tool locations
         diffdock_tool           = "<path to DiffDock directory>"
         vina_tool               = "<path to vina executable>"
@@ -38,6 +44,4 @@ params {
         diffdock_options          = "<slurm cluster options for DiffDock>"
         gnina_options             = "<slurm cluster options for GNINA>"
 
-        // parameters
-        autobox_add             = "10"
 }

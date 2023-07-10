@@ -124,12 +124,15 @@ Available options:
 
 ```
 Nextflow options:
+-----------------
 -resume                     resume the pipeline
 -c                          give a local configuration file instead of the nextflow.config file
 -with-timeline arg          generates a timeline file at the end of the workflow: <name>.html
 -with-dag arg               generates a dag of the workflow: <name>.pdf, <name>.html    
 
+
 Workflow options:
+-----------------
 --data arg                  <input>.csv, <path_to_pdb-sdf-files>, or <path_to_pdb-files>,<path_to_sdf-files>                           
 --naming arg                naming of the input files: default, other
                             default: <pdbID_Chain>.pdb, <pdbID_Chain>__<ligandName>.sdf, <pdbID_Chain>.cif/pdb
@@ -142,6 +145,9 @@ Workflow options:
 --tools arg                 comma-separated list of the docking tools to run, default is to 
                             run all available tools:
                             --> diffdock,tankbind,vina,smina,gnina
+                            
+--scoring_receptors         Compares the receptor structure to the reference using OpenStructure: 
+                                no (default), yes (lDDT, RMSD, and QS-score)                             
 
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
 --autobox_add arg           amount of buffer space to add on each side od the box (default 10)
@@ -149,6 +155,6 @@ Workflow options:
 
 ## Outputs
 
-The BiSyRMSD and lDDT-PLI of all predicted poses can be found in the score_summary.csv in the ```scores``` directory. 
+The BiSyRMSD and lDDT-PLI of all predicted poses can be found in the ligand_score_summary.csv in the ```scores``` directory. 
 
 All predicted ligand poses can be found in the ```predictions``` directory. 
