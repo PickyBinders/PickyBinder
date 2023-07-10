@@ -295,11 +295,11 @@ workflow {
         preped_ligands = vina_prepare_ligand(ligand_tuple)
         preped_receptors = vina_prepare_receptor(pdb_Hs)
 
-        identifiers.combine(preped_receptors, by: 0)                                // receptor, ligand, complex, preped_receptor
-                   .combine(preped_ligands.map{ [it[1], it[0]] }, by: 1)            // ligand, receptor, complex, preped_receptor, preped_ligand
-                   .map { [ it[2], it[0], it[1], it[3], it[4] ] }                   // complex, ligand, receptor, preped_receptor, preped_ligand
-                   .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)    // complex, ligand, receptor, preped_receptor, preped_ligand, box_file
-                   .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }            // complex, ligand, receptor, pocket, preped_receptor, preped_ligand, box_file
+        identifiers.combine(preped_receptors, by: 0)                        // receptor, ligand, complex, preped_receptor
+                   .combine(preped_ligands.map{ [it[1], it[0]] }, by: 1)    // ligand, receptor, complex, preped_receptor, preped_ligand
+                   .map { [ it[2], it[0], it[1], it[3], it[4] ] }           // complex, ligand, receptor, preped_receptor, preped_ligand
+                   .combine(boxes.transpose(), by: 0)                       // complex, ligand, receptor, preped_receptor, preped_ligand, box_file
+                   .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }     // complex, ligand, receptor, pocket, preped_receptor, preped_ligand, box_file
                    .set {vina_input}
 
         vina_out = vina(vina_input)
@@ -318,7 +318,7 @@ workflow {
         identifiers.combine(pdb_Hs, by: 0)
                    .combine(ligand_tuple.map{ [it[1], it[0]] }, by: 1)
                    .map { [ it[2], it[0], it[1], it[3], it[4] ] }
-                   .combine(boxes.flatten().map{file -> tuple(file.simpleName.toString().split("_pocket")[0], file)}, by: 0)
+                   .combine(boxes.transpose(), by: 0)
                    .map { [ it[0], it[1], it[2], it[5].simpleName.toString().split("_")[-1], it[3], it[4], it[5] ] }
                    .set {smi_gni_input}
     }
