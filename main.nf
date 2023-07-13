@@ -10,12 +10,13 @@ nextflow.enable.dsl=2
 log.info """
 PickyBinder  ~  version ${workflow.manifest.version}
 =============================================
-input data             : ${params.data}
-input naming           : ${params.naming}
-reference files        : ${params.ref_files}
+Tools                  : ${params.tools}
+Input data             : ${params.data}
+Reference files        : ${params.ref_files}
+Input naming           : ${params.naming}
 AlphaFold models       : ${params.alphafold}
-receptor_Hs            : ${params.receptor_Hs}
-diffdock_mode          : ${params.diffdock_mode}
+Hydrated receptors     : ${params.receptor_Hs}
+Diffdock mode          : ${params.diffdock_mode}
 """
 
 
@@ -398,6 +399,7 @@ workflow {
                            .transpose()
                            .set{predicted_coordinates}  // receptor, pocket, x, y, z
 
+
     // scoring the modelled receptors
 
     if (params.scoring_receptors == "yes") {
@@ -405,85 +407,86 @@ workflow {
         receptors_scores_summary = combine_receptors_scores(receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
     }
 
+    if (params.scoring_ligands == "yes") {
 
-    // tankbind
+        // tankbind
 
-    if (params.tools =~ /tankbind/) {
-        scoring_ref.combine(tankbind_out.sdfs, by: 0)
-                   .set { tb_scoring_input }
-        tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
+        if (params.tools =~ /tankbind/) {
+            scoring_ref.combine(tankbind_out.sdfs, by: 0)
+                       .set { tb_scoring_input }
+            tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
 
-        tb_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
-                         .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand ] }
-                         .transpose()
-                         .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_tankbind_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] ]}
-                         .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
-                         .set{ tb_scores_for_coordinates }    // receptor, pocket, complex, tb_score_csv
+            tb_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
+                             .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand ] }
+                             .transpose()
+                             .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_tankbind_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] ]}
+                             .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
+                             .set{ tb_scores_for_coordinates }    // receptor, pocket, complex, tb_score_csv
 
-        tankbind_out.affinities.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(strip:true, skip: 1) ] }
-                               .transpose()
-                               .map { [ it[1], it[2][2], it[0], it[2][3].split('"')[1], it[2][4], it[2][5].split('"')[0] ] }    // receptor, pocket, complex, x, y, z
-                               .combine(tb_scores_for_coordinates, by: [0, 1, 2])
-                               .map{ receptor, pocket, complex, x, y, z, csv -> [ receptor, pocket, complex, x, y, z, csv.splitCsv(strip:true)] }
-                               .transpose()
-                               .map { [ it[0], it[1], it[2], it[6][0], it[6][1], it[6][2], it[6][3], it[6][4], it[6][5], it[6][6], it[3], it[4], it[5] ] }
-                               .collectFile() { item -> [ "${item[2]}_${item[1]}_tankbind_score_summary.csv", item[3] + "," + item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] ] }
-                               .collect()
-                               .set{ tb_scores_for_summary }
-    }
-
-
-    // diffdock
-    if (params.tools =~ /diffdock/) {
-        scoring_ref.combine(diffdock_predictions.predictions.flatten().filter{ it =~ /\// }.map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
-                   .set { dd_scoring_input }
-        dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
-        dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
-    }
+            tankbind_out.affinities.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(strip:true, skip: 1) ] }
+                                   .transpose()
+                                   .map { [ it[1], it[2][2], it[0], it[2][3].split('"')[1], it[2][4], it[2][5].split('"')[0] ] }    // receptor, pocket, complex, x, y, z
+                                   .combine(tb_scores_for_coordinates, by: [0, 1, 2])
+                                   .map{ receptor, pocket, complex, x, y, z, csv -> [ receptor, pocket, complex, x, y, z, csv.splitCsv(strip:true)] }
+                                   .transpose()
+                                   .map { [ it[0], it[1], it[2], it[6][0], it[6][1], it[6][2], it[6][3], it[6][4], it[6][5], it[6][6], it[3], it[4], it[5] ] }
+                                   .collectFile() { item -> [ "${item[2]}_${item[1]}_tankbind_score_summary.csv", item[3] + "," + item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] ] }
+                                   .collect()
+                                   .set{ tb_scores_for_summary }
+        }
 
 
-    // vina
-    if (params.tools =~ /vina/) {
-        scoring_ref.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { vina_scoring_input }
-        vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
-
-        vina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
-                           .set{ vina_scores_for_coordinates }
-
-        vina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, vina_score_csv, x, y, z
-                                   .set{ vina_scores_for_coordinates_p2rank }
-
-        vina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
-                                   .set{ vina_scores_for_coordinates_defined }
-
-        vina_scores_for_coordinates_p2rank.concat(vina_scores_for_coordinates_defined)
-                     .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
-                     .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
-                     .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand, x, y, z] }
-                     .transpose()
-                     .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
-                     .collect()
-                     .set{ vina_scores_for_summary}
-    }
+        // diffdock
+        if (params.tools =~ /diffdock/) {
+            scoring_ref.combine(diffdock_predictions.predictions.flatten().filter{ it =~ /\// }.map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
+                       .set { dd_scoring_input }
+            dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
+            dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
+        }
 
 
-    // smina
-    if (params.tools =~ /smina/) {
-        scoring_ref.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { smina_scoring_input }
-        smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+        // vina
+        if (params.tools =~ /vina/) {
+            scoring_ref.combine(vina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { vina_scoring_input }
+            vina_scores = vina_ost(vina_scoring_input, Channel.value( 'vina' ))
 
-        smina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
-                           .set{ smina_scores_for_coordinates }
+            vina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
+                               .set{ vina_scores_for_coordinates }
 
-        smina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, smina_score_csv, x, y, z
-                                   .set{ smina_scores_for_coordinates_p2rank }
+            vina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, vina_score_csv, x, y, z
+                                       .set{ vina_scores_for_coordinates_p2rank }
 
-        smina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
-                                   .set{ smina_scores_for_coordinates_defined }
+            vina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
+                                       .set{ vina_scores_for_coordinates_defined }
 
-        smina_scores_for_coordinates_p2rank.concat(smina_scores_for_coordinates_defined)
+            vina_scores_for_coordinates_p2rank.concat(vina_scores_for_coordinates_defined)
+                        .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
+                        .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
+                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand, x, y, z] }
+                        .transpose()
+                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                        .collect()
+                        .set{ vina_scores_for_summary}
+        }
+
+
+        // smina
+        if (params.tools =~ /smina/) {
+            scoring_ref.combine(smina_out.smina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { smina_scoring_input }
+            smina_scores = smina_ost(smina_scoring_input, Channel.value( 'smina' ))
+
+            smina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
+                                .set{ smina_scores_for_coordinates }
+
+            smina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, smina_score_csv, x, y, z
+                                        .set{ smina_scores_for_coordinates_p2rank }
+
+            smina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
+                                        .set{ smina_scores_for_coordinates_defined }
+
+            smina_scores_for_coordinates_p2rank.concat(smina_scores_for_coordinates_defined)
                      .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                      .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
                      .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand, x, y, z] }
@@ -494,22 +497,22 @@ workflow {
     }
 
 
-    // gnina
-    if (params.tools =~ /gnina/) {
-        scoring_ref.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
-                   .set { gnina_scoring_input }
-        gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
+        // gnina
+        if (params.tools =~ /gnina/) {
+            scoring_ref.combine(gnina_out.gnina_sdf.map{[ it[0], it[3]]}, by: 0)
+                       .set { gnina_scoring_input }
+            gnina_scores = gnina_ost(gnina_scoring_input, Channel.value( 'gnina' ))
 
-        gnina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
-                           .set{ gnina_scores_for_coordinates }
+            gnina_scores.summary.map{[ it[1], "pocket" + it[2].simpleName.toString().split("_pocket")[1].split("_")[0], it[0], it[2]]}   // receptor, pocket, complex, vina_score_csv
+                                .set{ gnina_scores_for_coordinates }
 
-        gnina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, gnina_score_csv, x, y, z
-                                   .set{ gnina_scores_for_coordinates_p2rank }
+            gnina_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, gnina_score_csv, x, y, z
+                                        .set{ gnina_scores_for_coordinates_p2rank }
 
-        gnina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
-                                   .set{ gnina_scores_for_coordinates_defined }
+            gnina_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
+                                        .set{ gnina_scores_for_coordinates_defined }
 
-        gnina_scores_for_coordinates_p2rank.concat(gnina_scores_for_coordinates_defined)
+            gnina_scores_for_coordinates_p2rank.concat(gnina_scores_for_coordinates_defined)
                      .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                      .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
                      .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand, x, y, z] }
@@ -517,12 +520,13 @@ workflow {
                      .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
                      .collect()
                      .set{ gnina_scores_for_summary}
-    }
+        }
 
-    // create score summary file
-    overall_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
+        // create ligand score summary file
+        overall_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
                                    dd_scores_for_summary.ifEmpty([]).combine(
                                    vina_scores_for_summary.ifEmpty([]).combine(
                                    smina_scores_for_summary.ifEmpty([]).combine(
                                    gnina_scores_for_summary.ifEmpty([]))))))
+    }
 }

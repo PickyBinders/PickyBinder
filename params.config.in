@@ -14,6 +14,7 @@ params {
 
         // scoring
         scoring_receptors       = "no"          // yes, no
+        scoring_ligands         = "yes"         // yes, no
 
         // parameters
         autobox_add             = "10"

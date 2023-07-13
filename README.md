@@ -147,7 +147,9 @@ Workflow options:
                             --> diffdock,tankbind,vina,smina,gnina
                             
 --scoring_receptors         Compares the receptor structure to the reference using OpenStructure: 
-                                no (default), yes (lDDT, RMSD, and QS-score)                             
+                                no (default), yes (lDDT, RMSD, and QS-score)
+--scoring_ligands           Scoring lingand prediction using OpenStructure (lDDT-PLI, BiSyRMSD):
+                                yes (default), no                                                   
 
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
 --autobox_add arg           amount of buffer space to add on each side od the box (default 10)
