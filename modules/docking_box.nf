@@ -15,7 +15,8 @@ process docking_boxes_predicted_pockets {
     tuple val (ligand), val (receptor), val (complex), path (pdb_Hs), path (p2rank_predictions), path (box_size)
 
     output:
-    path ("*.box"), emit: box_per_pocket
+    tuple val (complex), path ("*.box"), emit: box_per_pocket
+    tuple val (complex), val (receptor), path("*ProteinCenter_coordinates.csv"), emit: center_coordinates
 
     script:
     """
@@ -34,7 +35,8 @@ process docking_box_defined_BS {
     tuple val (ligand), val (receptor), val (complex), path (pdb_Hs), val (coordinates), path (box_size)
 
     output:
-    path ("*.box"), emit: boxes_bs_wp
+    tuple val (complex), path ("*.box"), emit: boxes_bs_wp
+    tuple val (complex), val (receptor), path("*ProteinCenter_coordinates.csv"), emit: center_coordinates
 
     script:
     """

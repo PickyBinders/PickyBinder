@@ -16,7 +16,7 @@ process tankbind {
     tuple val (ligand), val (receptor), val (complex), path (pdb_Hs), path (p2rank_prediction), path (ligand_sdf)
     
     output:
-    tuple val (complex), path ("${complex}_tankbind.csv"), emit: affinities
+    tuple val (complex), val (receptor), path ("${complex}_tankbind.csv"), emit: affinities
     tuple val (complex), path ("tankbind_predictions/*"), emit: sdfs
     path ("tankbind_*.log"), emit: tankbind_log
     

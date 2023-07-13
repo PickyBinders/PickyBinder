@@ -24,7 +24,7 @@ def combine_scores(ost_json, tool):
         rank = name.split('_')[-1].split('.')[0]
         # confidence = '-'
     elif tool == 'tankbind':
-        pocket = name.split('_')[-3] + name.split('_')[-2]
+        pocket = name.split('_')[-2]
         rank = '-'
         # confidence = '-'
     elif tool == 'diffdock':

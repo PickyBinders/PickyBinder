@@ -16,7 +16,7 @@ process ost_scoring {
 
     output:
     tuple val (complex), path ("*.json"), emit: score
-    tuple val (complex), path ("*.csv"), emit: summary
+    tuple val (complex), val (receptor), path ("*.csv"), emit: summary
 
     script:
     """
@@ -49,13 +49,16 @@ process score_summary {
     """
     if [[ ! -f $launchDir/scores/ligand_score_summary.csv ]]
     then
-        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand' > ligand_score_summary.csv
-        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> ligand_score_summary.csv
+        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand,center_x,center_y,center_z' > score_summary.csv
+        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     else
-        cp $launchDir/scores/ligand_score_summary.csv ligand_score_summary_old.csv
-        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> ligand_score_summary_old.csv
-        (head -n 1 ligand_score_summary_old.csv && tail -n +2 ligand_score_summary_old.csv | sort) | uniq > ligand_score_summary.csv
+        cp $launchDir/scores/ligand_score_summary.csv score_summary.csv
+        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     fi
+
+    (head -n 1 score_summary.csv && tail -n +2 score_summary.csv | sort) | uniq > ligand_score_summary.csv
+
+    #awk 'BEGIN {FS=","; OFS=","} {print \$1, \$2, \$3, \$8, \$9, \$10, \$4, \$5, \$6, \$7}' score_summary.csv > ligand_score_summary.csv
     """
 }
 
