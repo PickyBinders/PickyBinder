@@ -55,14 +55,14 @@ info = []
 for compound_name in list(compound_dict.keys()):
     # use protein center as the block center.
     com = ",".join([str(a.round(3)) for a in protein_dict[pdb][0].mean(axis=0).numpy()])
-    info.append([pdb, compound_name, "protein_center", com])
+    info.append([pdb, compound_name, "pocketProteinCenter", com])
 
     pocket = pd.read_csv(p2rank_predictions)
     pocket.columns = pocket.columns.str.strip()
     pocket_coms = pocket[['center_x', 'center_y', 'center_z']].values
     for ith_pocket, com in enumerate(pocket_coms):
         com = ",".join([str(a.round(3)) for a in com])
-        info.append([pdb, compound_name, f"pocket_{ith_pocket + 1}", com])
+        info.append([pdb, compound_name, f"pocket{ith_pocket + 1}", com])
 info = pd.DataFrame(info, columns=['protein_name', 'compound_name', 'pocket_name', 'pocket_com'])
 
 # construct dataset
@@ -107,7 +107,7 @@ info = dataset.data
 info['affinity'] = affinity_pred_list
 info_sorted = info.sort_values('affinity', ascending=False)
 
-info_sorted.to_csv(f"{complex_name}_tankbind.csv")
+info_sorted.to_csv(f"{complex_name}_tankbind.csv", index=False)
 
 
 # from predicted interaction distance map to sdf

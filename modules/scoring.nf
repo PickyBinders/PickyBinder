@@ -16,7 +16,7 @@ process ost_scoring {
 
     output:
     tuple val (complex), path ("*.json"), emit: score
-    tuple val (complex), path ("*.csv"), emit: summary
+    tuple val (complex), val (receptor), path ("*.csv"), emit: summary
 
     script:
     """
@@ -43,24 +43,27 @@ process score_summary {
     path (scores)
 
     output:
-    path ("score_summary.csv"), emit: score_summary
+    path ("ligand_score_summary.csv"), emit: score_summary
 
     script:
     """
-    if [[ ! -f $launchDir/scores/score_summary.csv ]]
+    if [[ ! -f $launchDir/scores/ligand_score_summary.csv ]]
     then
-        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand' > score_summary.csv
+        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand,center_x,center_y,center_z' > score_summary.csv
         grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     else
-        cp $launchDir/scores/score_summary.csv score_summary_old.csv
-        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary_old.csv
-        (head -n 1 score_summary_old.csv && tail -n +2 score_summary_old.csv | sort) | uniq > score_summary.csv
+        cp $launchDir/scores/ligand_score_summary.csv score_summary.csv
+        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     fi
+
+    (head -n 1 score_summary.csv && tail -n +2 score_summary.csv | sort) | uniq > ligand_score_summary.csv
+
+    #awk 'BEGIN {FS=","; OFS=","} {print \$1, \$2, \$3, \$8, \$9, \$10, \$4, \$5, \$6, \$7}' score_summary.csv > ligand_score_summary.csv
     """
 }
 
 
-process ost_scoring_modelReceptors {
+process ost_scoring_receptors {
     publishDir "$params.OUTPUT/receptors", mode: 'copy'
     container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
@@ -79,8 +82,8 @@ process ost_scoring_modelReceptors {
 }
 
 
-process combine_modelReceptors_scores {
-    publishDir "$params.OUTPUT/receptors", mode: 'copy'
+process combine_receptors_scores {
+    publishDir "$params.OUTPUT", mode: 'copy'
 
     input:
     path (scores)
@@ -90,14 +93,14 @@ process combine_modelReceptors_scores {
 
     script:
     """
-    echo receptor, lddt, rmsd, qs_global > modelled_receptors_score_summary.csv
+    echo receptor, lddt, rmsd, qs_global > receptor_score_summary.csv
 
     for file in *.json
     do
         lddt=\$(grep 'lddt' \$file | cut -d' ' -f6)
         rmsd=\$(grep 'rmsd' \$file | cut -d' ' -f6)
         qs_global=\$(grep 'qs_global' \$file | cut -d' ' -f6)
-        echo \${file%.json}, \$lddt \$rmsd \$qs_global >> modelled_receptors_score_summary.csv
+        echo \${file%.json}, \$lddt \$rmsd \$qs_global >> receptor_score_summary.csv
     done
     """
 }

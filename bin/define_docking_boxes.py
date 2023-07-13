@@ -17,8 +17,9 @@ def whole_protein_box(complex_name, pdb_file):
     https://github.com/luwei0917/TankBind/blob/main/examples/construction_PDBbind_training_and_test_dataset.ipynb
     as of 28.02.2023
 
-    Returns a text file containing the protein's center coordinates and the box diameter (100Å) that can
-    be utilized for docking with Autodock Vina-like tools.
+    Returns two text files one contains the coordinates of the protein center and the second one contains
+    the protein's center coordinates and the box diameter (100Å) that can be utilized for docking with
+    Autodock Vina-like tools.
     """
     try:
         parser = PDBParser(QUIET=True)
@@ -28,6 +29,15 @@ def whole_protein_box(complex_name, pdb_file):
         protein_dict = {pdb_file: get_protein_feature(res_list)}
 
         protein_center = [str(a.round(3)) for a in protein_dict[pdb_file][0].mean(axis=0).numpy()]
+
+        receptor_name = pdb_file.split('.pdb')[0].split('_Hs')[0]
+        protein_center_file = Path() / f"{receptor_name}_ProteinCenter_coordinates.csv"
+
+        with open(protein_center_file, 'w+') as c:
+            c.write("center_x,center_y,center_z")
+            c.write("\n")
+            c.write(protein_center[0] + ',' + protein_center[1] + ',' + protein_center[2])
+            c.write("\n")
 
         center_x = 'center_x = ' + str(protein_center[0])
         center_y = 'center_y = ' + str(protein_center[1])
@@ -88,9 +98,9 @@ def box_per_predicted_pocket(complex_name, box_size, p2rank_predictions):
         center_y = 'center_y = ' + str(df.loc[row, "center_y"])
         center_z = 'center_z = ' + str(df.loc[row, "center_z"])
 
-        size_x = "size_x = " + box_size
-        size_y = "size_y = " + box_size
-        size_z = "size_z = " + box_size
+        size_x = "size_x = " + str(box_size)
+        size_y = "size_y = " + str(box_size)
+        size_z = "size_z = " + str(box_size)
 
         box = [center_x, center_y, center_z, size_x, size_y, size_z]
 
@@ -117,9 +127,9 @@ def box_for_defined_bs(complex_name, box_size, bs_coordinates):
     center_y = 'center_y = ' + bs_coordinates.split('_')[1]
     center_z = 'center_z = ' + bs_coordinates.split('_')[2]
 
-    size_x = "size_x = " + box_size
-    size_y = "size_y = " + box_size
-    size_z = "size_z = " + box_size
+    size_x = "size_x = " + str(box_size)
+    size_y = "size_y = " + str(box_size)
+    size_z = "size_z = " + str(box_size)
 
     box = [center_x, center_y, center_z, size_x, size_y, size_z]
 
