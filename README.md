@@ -74,14 +74,14 @@ or provide directories for receptor, ligand and reference files.
 The csv file needs to have a header row with the following column names: 
 **complex_name,receptor_path,ligand_path_sdf,ligand_path_mol2,reference_path,BS** 
 
-| Column           |                         Content                                | Description                                                                                                                                                                                                  |
-|:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| complex_name     | name used to save predictions                             | if empty the names of the receptor and the ligand will be combined                                                                                                                                           |
-| receptor_path    | full path to the receptor pdb file                        |                                                                                                                                                                                                              |
-| ligand_path_sdf  | full path to the ligand sdf file                          |                                                                                                                                                                                                              |
-| ligand_path_mol2 | full path to ligand mol2 file                             | if the ligand preprocessing fails using the sdf file, ligand preprocessing is retried with the mol2 file. Put a `-` if no mol2 file is available.                                                            |
-| reference_path   | full path to the reference file for scoring               | provide either a mmCIF or a pdb file; If no path is given, the receptor pdb file is used as the reference.                                                                                                   |
-| BS               | x-coordinate_y-coordinate_z-coordinate                    | coordinates of the binding site center; leave empty to use binding pockets predicted by P2Rank                                                                                                               |
+| Column           |                         Content                                | Description                                                                                                                                           |
+|:-----------------|:----------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| complex_name     | name used to save predictions                             | if empty the names of the receptor and the ligand will be combined                                                                                    |
+| receptor_path    | full path to the receptor pdb file                        |                                                                                                                                                       |
+| ligand_path_sdf  | full path to the ligand sdf file                          |                                                                                                                                                       |
+| ligand_path_mol2 | full path to ligand mol2 file                             | if the ligand preprocessing fails using the sdf file, ligand preprocessing is retried with the mol2 file. Put a `-` if no mol2 file is available.     |
+| reference_path   | full path to the reference file for scoring               | provide either a mmCIF or a pdb file; Put `-` to use the receptor pdb file as the receptor reference and the ligand sdf file as the ligand reference. |
+| BS               | x-coordinate_y-coordinate_z-coordinate                    | coordinates of the binding site center; leave empty to use binding pockets predicted by P2Rank                                                        |
 
 Use the workflow option ```--data <input>.csv``` to run the workflow. 
 
