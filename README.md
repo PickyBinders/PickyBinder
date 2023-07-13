@@ -148,7 +148,7 @@ Workflow options:
                             
 --scoring_receptors         Compares the receptor structure to the reference using OpenStructure: 
                                 no (default), yes (lDDT, RMSD, and QS-score)
---scoring_ligands           Scoring lingand prediction using OpenStructure (lDDT-PLI, BiSyRMSD):
+--scoring_ligands           Scoring ligand prediction using OpenStructure (lDDT-PLI, BiSyRMSD):
                                 yes (default), no                                                   
 
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
