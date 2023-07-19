@@ -57,8 +57,6 @@ process score_summary {
     fi
 
     (head -n 1 score_summary.csv && tail -n +2 score_summary.csv | sort) | uniq > ligand_score_summary.csv
-
-    #awk 'BEGIN {FS=","; OFS=","} {print \$1, \$2, \$3, \$8, \$9, \$10, \$4, \$5, \$6, \$7}' score_summary.csv > ligand_score_summary.csv
     """
 }
 

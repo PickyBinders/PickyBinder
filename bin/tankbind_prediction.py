@@ -48,7 +48,7 @@ protein_dict[pdb] = get_protein_feature(res_list)
 compound_dict = {}
 mol = Chem.MolFromMolFile(ligand_file)
 mol = Chem.RemoveHs(mol)
-compound_dict[pdb + f"_{ligand}" + "_rdkit"] = extract_torchdrug_feature_from_mol(mol, has_LAS_mask=True)
+compound_dict[f"{complex_name}" + "_rdkit"] = extract_torchdrug_feature_from_mol(mol, has_LAS_mask=True)
 
 # p2rank info
 info = []
