@@ -22,14 +22,16 @@ params {
         // tool locations
         diffdock_tool           = "<path to DiffDock directory>"
         vina_tool               = "<path to vina executable>"
-        p2rank_tool             = "<path ro p2rank>"
+        p2rank_tool             = "<path to p2rank>"
         tankbind_scripts        = "$baseDir/bin/tankbind/"
+        edmdock                 = "<path to EDMDock directory>"
 
         // conda containers
         diffdock_conda          = "<path to DiffDock conda env>"
         meeko_conda             = "<path to Meeko conda env>"
         vina_conda              = "<path to Autodock Vina conda env>"
         smina_conda             = "<path to SMINA conda env>"
+        edmdock_conda           = "<path to EDMDock conda env>"
 
         // singularity images
         tankbind_sing           = "<path to TANKBind Singularity img>"
