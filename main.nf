@@ -179,6 +179,7 @@ include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
+include { combine_all_scores } from "./modules/all_scores_summary"
 
 
 /*
@@ -246,7 +247,6 @@ workflow {
             // concatenate boxes_no_BS and boxes_BS channels
             boxes = boxes_no_BS.box_per_pocket.concat(boxes_BS.boxes_bs_wp)
             wp_coordinates = boxes_no_BS.center_coordinates.concat(boxes_BS.center_coordinates)
-
         }
         else {
             identifiers.combine(pdb_Hs, by: 0)
@@ -277,8 +277,11 @@ workflow {
                        .set{ diffd_csv }
 
             diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
+            diffdock_predictions.predictions.flatten()
+                                .filter{ it =~ /confidence/ }
+                                .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                                .set{ for_dd_tool_scores }
         }
-
         else if (params.diffdock_mode == "single") {
 
             identifiers.combine(pdb_Hs, by: 0)
@@ -286,10 +289,15 @@ workflow {
                        .set{ input_diffd_single }
 
             diffdock_predictions = diffdock_single(input_diffd_single, diffd_tool.collect())
+            diffdock_predictions.predictions.flatten()
+                                .filter{ it =~ /confidence/ }
+                                .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                                .set{ for_dd_tool_scores }
         }
     }
     else {
         dd_scores_for_summary = Channel.empty()
+        for_dd_tool_scores = Channel.empty()
     }
 
 
@@ -310,9 +318,11 @@ workflow {
 
         vina_out = vina(vina_input)
         vina_sdf = vina_pdbtqToSdf(vina_out.vina_result, Channel.value( 'vina' ))
+        vina_sdf.map{ it[3] }.collect().set{ for_vina_tool_scores }
     }
     else {
         vina_scores_for_summary = Channel.empty()
+        for_vina_tool_scores = Channel.empty()
     }
 
 
@@ -331,9 +341,11 @@ workflow {
 
     if (params.tools =~ /smina/) {
         smina_out = smina_sdf(smi_gni_input)
+        smina_out.smina_sdf.map{ it[3] }.collect().set{ for_smina_tool_scores }
     }
     else {
         smina_scores_for_summary = Channel.empty()
+        for_smina_tool_scores = Channel.empty()
     }
 
 
@@ -343,9 +355,11 @@ workflow {
 
     if (params.tools =~ /gnina/) {
         gnina_out = gnina_sdf(smi_gni_input)
+        gnina_out.gnina_sdf.map{ it[3] }.collect().set{ for_gnina_tool_scores }
     }
     else {
         gnina_scores_for_summary = Channel.empty()
+        for_gnina_tool_scores = Channel.empty()
     }
 
 
@@ -360,9 +374,11 @@ workflow {
                    .set {tankbind_input}
 
         tankbind_out = tankbind(tankbind_input)
+        tankbind_out.affinities.map{ it[2] }.collect().set{ for_tb_tool_scores }
     }
     else {
         tb_scores_for_summary = Channel.empty()
+        for_tb_tool_scores = Channel.empty()
     }
 
 
@@ -399,9 +415,12 @@ workflow {
                            .transpose()
                            .set{predicted_coordinates}  // receptor, pocket, x, y, z
 
+    predicted_coordinates.map { it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
+                         .collectFile(name: 'p2rank_summary.csv', newLine: true)
+                         .set { p2rank_summary }
+
 
     // scoring the modelled receptors
-
     if (params.scoring_receptors == "yes") {
         receptors_scores = ost_scoring_receptors(scoring_ref.map{ [it[1], it[3], it[4]] }.unique())
         receptors_scores_summary = combine_receptors_scores(receptors_scores.toList().flatten().filter{ it =~ /json/ }.collect())
@@ -438,7 +457,7 @@ workflow {
 
         // diffdock
         if (params.tools =~ /diffdock/) {
-            scoring_ref.combine(diffdock_predictions.predictions.flatten().filter{ it =~ /\// }.map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
+            scoring_ref.combine(diffdock_predictions.predictions.flatten().filter{ it =~ /confidence/ }.map{[it.toString().split('/')[-2], it]}.groupTuple(), by: 0)
                        .set { dd_scoring_input }
             dd_scores = dd_ost(dd_scoring_input, Channel.value( 'diffdock' ))
             dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
@@ -523,10 +542,22 @@ workflow {
         }
 
         // create ligand score summary file
-        overall_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
+        overall_ost_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
                                    dd_scores_for_summary.ifEmpty([]).combine(
                                    vina_scores_for_summary.ifEmpty([]).combine(
                                    smina_scores_for_summary.ifEmpty([]).combine(
                                    gnina_scores_for_summary.ifEmpty([]))))))
     }
+
+
+    /*
+    * combine tool scores to ost scores summary file
+    */
+
+    all_scores = combine_all_scores(overall_ost_scores.combine(
+                                    for_tb_tool_scores.ifEmpty([]).combine(
+                                    for_dd_tool_scores.ifEmpty([]).combine(
+                                    for_vina_tool_scores.ifEmpty([]).combine(
+                                    for_smina_tool_scores.ifEmpty([]).combine(
+                                    for_gnina_tool_scores.ifEmpty([])))))))
 }
