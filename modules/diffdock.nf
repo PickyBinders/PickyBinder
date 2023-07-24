@@ -28,7 +28,7 @@ process diffdock {
     cat ${protein_ligand_csv} >> protein_ligand_withHeader.csv
 
     python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
-       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+       ${params.diffdock_params}
 
     for dir in diffdock_predictions/*; do for file in \${dir}/*; do mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file);done;done
 
@@ -53,7 +53,7 @@ process diffdock_single {
     script:
     """
     python -m inference --complex_name ${complex} --protein_path ${pdb_file} --ligand ${sdf_file} --out_dir ./ \
-       --inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise
+       ${params.diffdock_params}
 
     for file in ${complex}/*; do mv \$file ${complex}/${complex}_\$(basename \$file);done
     """

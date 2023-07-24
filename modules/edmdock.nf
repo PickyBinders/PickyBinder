@@ -59,7 +59,7 @@ process edmdock_single {
     path (edmdock_tool)
 
     output:
-    path("${pocket}")
+    tuple val(complex), val (receptor), val (pocket), path("${pocket}/*.pdb")
 
     script:
     """
