@@ -22,14 +22,15 @@ def combine_scores(ost_json, tool):
     if tool == 'vina' or tool == 'smina' or tool == 'gnina':
         pocket = name.split('_')[-3]
         rank = name.split('_')[-1].split('.')[0]
-        # confidence = '-'
     elif tool == 'tankbind':
         pocket = name.split('_')[-2]
         rank = '-'
-        # confidence = '-'
     elif tool == 'diffdock':
         pocket = '-'
         rank = name.split('_rank')[1].split('_')[0]
+    elif tool == 'edmdock':
+        pocket = name.split('_')[-2]
+        rank = '-'
     else:
         pocket = '-'
         rank = '-'
@@ -61,7 +62,7 @@ score_df.sort_values(by=['Pocket', 'Rank'], inplace=True)
 if tool_name == 'vina' or tool_name == 'smina' or tool_name == 'gnina':
     pocket_nr = score_df.iloc[0]['Pocket']
     out_file = complex_name + '_' + pocket_nr + '_' + tool_name + '_score_summary.csv'
-elif tool_name == 'tankbind' or tool_name == 'diffdock':
+elif tool_name == 'tankbind' or tool_name == 'diffdock' or tool_name == 'edmdock':
     out_file = complex_name + '_' + tool_name + '_score_summary.csv'
 
 score_df.to_csv(out_file, index=False)

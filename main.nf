@@ -157,10 +157,14 @@ else if (params.data.split(',').size() == 2 ) {
     params.BS = false
 }
 
-// add Diffdock dependencies
+// add Diffdock and EDMDock dependencies
 Channel
     .fromPath("${params.diffdock_tool}/*", type: 'any')
     .set { diffd_tool }
+
+Channel
+    .fromPath("${params.edmdock_tool}/*", type: 'any')
+    .set { edmdock_tool }
 
 
 /*
@@ -177,9 +181,11 @@ include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_p
 include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
-include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; score_summary } from "./modules/scoring"
+include { pdb_to_sdf } from "./modules/scoring"
+include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
+include { edmdock; edmdock_single } from "./modules/edmdock"
 
 
 /*
@@ -220,7 +226,7 @@ workflow {
 
     // define box parameters for vina-like tools
     wp_coordinates = Channel.empty()
-    if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/) {
+    if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /edmdock/) {
         box_size = calculate_boxSize(ligand_tuple)
 
         if (params.BS) {
@@ -383,6 +389,41 @@ workflow {
 
 
     /*
+    * docking using EDMDock
+    */
+
+    if (params.tools =~ /edmdock/) {
+
+        identifiers.combine(pdb_Hs, by: 0)
+                   .combine(ligand_tuple.map{ [it[1], it[0]]}, by: 1)
+                   .map { [ it[2], it[0], it[1], it[3], it[4] ] }
+                   .combine(boxes.transpose(), by: 0)   // complex, ligand, receptor, preped_receptor, preped_ligand, box_file
+                   .map { [ it[0], it[5].simpleName.toString().split("_")[-1], it[2], it[1], it[3], it[4], it[5] ] }  // complex, pocket, receptor, ligand, preped_receptor, preped_ligand, box_file
+                   //.toList()
+                   .set { edm_dock_input }
+
+        //edmdock_single(edm_dock_input, edmdock_tool.collect())
+
+        //edm_dock_input.map{ "${it[4].name},${it[5].name},${it[6].name}" }
+        //              .collectFile(name: 'edmdock_samples.csv', newLine: true)
+        //              .set{ edmdock_samples_file }
+
+        edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
+                      .collectFile() {item ->
+                            [ "edmdock_samples.csv", item[0] + "," + item[1] + "," + item[2] + "\n"]
+                      }
+                      .set{ edmdock_samples_file }
+
+        edmdock_out = edmdock(edmdock_samples_file, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), boxes.flatten().filter{it =~ /\//}.collect(), edmdock_tool.collect())
+        edmdock_sdfs = pdb_to_sdf(edmdock_out.pdbs, "predictions/edmdock/results")
+    }
+    else {
+        edmdock_scores_for_summary = Channel.empty()
+        for_edmdock_tool_scores = Channel.empty()
+    }
+
+
+    /*
     * ost scoring
     */
 
@@ -541,12 +582,46 @@ workflow {
                      .set{ gnina_scores_for_summary}
         }
 
+
+        // edmdock
+        if (params.tools =~ /edmdock/) {
+            scoring_ref.combine(edmdock_sdfs.flatten().map{[it.simpleName.split('_pocket')[0], it]}.groupTuple(), by: 0)
+                       .set { edm_scoring_input }
+
+            edm_scores = edm_ost(edm_scoring_input, Channel.value( 'edmdock' ))
+            //edm_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ edmdock_scores_for_summary }
+
+            edm_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
+                          .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.lddt_pli, row.rmsd, row.Reference_Ligand ] }
+                          .transpose()
+                          .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_edmdock_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] ]}
+                          .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
+                          .set{ edm_scores_for_coordinates }    // receptor, pocket, complex, edmdock_score_csv
+
+            edm_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, vina_score_csv, x, y, z
+                                      .set{ edm_scores_for_coordinates_p2rank }
+
+            edm_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
+                                      .set{ edm_scores_for_coordinates_defined }
+
+            edm_scores_for_coordinates_p2rank.concat(edm_scores_for_coordinates_defined)
+                        .map{ [ it[3].simpleName.split('____')[1], it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
+                        .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(strip:true), x, y, z] }
+                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row[0][0], row[0][1], row[0][2], row[0][3], row[0][4], row[0][5], row[0][6], x, y, z ] }
+                        .transpose()
+                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                        .collect()
+                        .set{ edmdock_scores_for_summary}
+         }
+
+
         // create ligand score summary file
         overall_ost_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
                                    dd_scores_for_summary.ifEmpty([]).combine(
                                    vina_scores_for_summary.ifEmpty([]).combine(
                                    smina_scores_for_summary.ifEmpty([]).combine(
-                                   gnina_scores_for_summary.ifEmpty([]))))))
+                                   gnina_scores_for_summary.ifEmpty([]).combine(
+                                   edmdock_scores_for_summary.ifEmpty([])))))))
     }
 
 

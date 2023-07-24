@@ -10,7 +10,7 @@ params {
         receptor_Hs             = "no"          // yes, no
         diffdock_mode           = "batch"       // batch, single
 
-        tools                   = "diffdock,tankbind,vina,smina,gnina"
+        tools                   = "diffdock,tankbind,vina,smina,gnina,edmdock"
 
         // scoring
         scoring_receptors       = "no"          // yes, no
@@ -46,5 +46,5 @@ params {
         cpu_options               = "<slurm cluster options for cpu processes>"
         diffdock_options          = "<slurm cluster options for DiffDock>"
         gnina_options             = "<slurm cluster options for GNINA>"
-
+        edmdock_options           = "<slurm cluster options for EDMDock>"
 }

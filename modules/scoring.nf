@@ -4,6 +4,25 @@
 
 params.OUTPUT = "$launchDir/scores"
 
+process pdb_to_sdf {
+    publishDir "${out_dir}", mode: 'copy'
+    container "${params.ost_sing}"
+    containerOptions "-B $baseDir/bin"
+
+    input:
+    path(prediction_pdb)
+    val(out_dir)
+
+    output:
+    path ("*.sdf")
+
+    script:
+    """
+    python3 $baseDir/bin/pdb_to_sdf.py ${prediction_pdb}
+    """
+}
+
+
 process ost_scoring {
     publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
     container "${params.ost_sing}"
