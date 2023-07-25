@@ -53,7 +53,7 @@ else if (params.data =~ /\.csv$/) {
     // map pdb, sdf, and mol2 files
     all_input_defined.map{ [it[0]] }.flatten().set{ pdb_files }
     all_input_defined.map{ [it[1]] }.flatten().set{ ref_sdf_files }
-    all_input_defined.map{ [it[2]] }.filter{ it[].simpleName == /-/ }.ifEmpty( [] ).set{ mol_files }
+    all_input_defined.map{ [it[2]] }.filter{ !(it.simpleName == /-/) }.ifEmpty( [] ).set{ mol_files }
 
     // ref files; if none is given assign the input pdb as reference
     all_input_defined.branch{
