@@ -1,0 +1,4 @@
+complex_name,receptor_path,ligand_path_sdf,ligand_path_mol2,reference_path,BS
+abcd_ca,home/data/abcd.pdb,home/data/ca.sdf,-,home/data/abcd.cif,
+complexEFGH-1,home/data/efgh.pdb,home/data/FRU.sdf,home/data/FRU.mol2,home/data/efgh.cif,-24.6194_18.7716_-7.7621
+,home/data/ijkl.pdb,home/data/PO4.sdf,-,-,

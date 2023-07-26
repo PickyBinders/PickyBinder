@@ -1,0 +1,6 @@
+conda create --name edm-dock python=3.9
+conda activate edm-dock
+conda install pytorch==2.0.0 torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-2.0.0+cu117.html
+conda install pytorch-lightning openff-toolkit openff-forcefields openmm openmmforcefields easydict cuda-version=11.7 cudatoolkit==11.7.1 
+pip install pandas rdkit einops
