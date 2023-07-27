@@ -402,20 +402,19 @@ workflow {
                    //.toList()
                    .set { edm_dock_input }
 
-        //edmdock_single(edm_dock_input, edmdock_tool.collect())
+        // single sample version
+        edmdock_out = edmdock_single(edm_dock_input, edmdock_tool.collect())
+        edmdock_sdfs = pdb_to_sdf(edmdock_out.flatten().filter{ it =~ /\// }.collect(), "predictions/edmdock/results")
 
-        //edm_dock_input.map{ "${it[4].name},${it[5].name},${it[6].name}" }
-        //              .collectFile(name: 'edmdock_samples.csv', newLine: true)
+        // batch version
+        //edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
+        //              .collectFile() {item ->
+        //                    [ "edmdock_samples.csv", item[0] + "," + item[1] + "," + item[2] + "\n"]
+        //              }
         //              .set{ edmdock_samples_file }
 
-        edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
-                      .collectFile() {item ->
-                            [ "edmdock_samples.csv", item[0] + "," + item[1] + "," + item[2] + "\n"]
-                      }
-                      .set{ edmdock_samples_file }
-
-        edmdock_out = edmdock(edmdock_samples_file, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), boxes.flatten().filter{it =~ /\//}.collect(), edmdock_tool.collect())
-        edmdock_sdfs = pdb_to_sdf(edmdock_out.pdbs, "predictions/edmdock/results")
+        //edmdock_out = edmdock(edmdock_samples_file, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), boxes.flatten().filter{it =~ /\//}.collect(), edmdock_tool.collect())
+        //edmdock_sdfs = pdb_to_sdf(edmdock_out.pdbs, "predictions/edmdock/results")
     }
     else {
         edmdock_scores_for_summary = Channel.empty()
