@@ -10,13 +10,16 @@ nextflow.enable.dsl=2
 log.info """
 PickyBinder  ~  version ${workflow.manifest.version}
 =============================================
-Tools                  : ${params.tools}
+
 Input data             : ${params.data}
 Reference files        : ${params.ref_files}
 Input naming           : ${params.naming}
 AlphaFold models       : ${params.alphafold}
 Hydrated receptors     : ${params.receptor_Hs}
-Diffdock mode          : ${params.diffdock_mode}
+Tools                  : ${params.tools}
+
+=============================================
+
 """
 
 
@@ -622,16 +625,21 @@ workflow {
                                    gnina_scores_for_summary.ifEmpty([]).combine(
                                    edmdock_scores_for_summary.ifEmpty([])))))))
     }
+    else {
+        overall_ost_scores = Channel.empty()
+    }
 
 
     /*
     * combine tool scores to ost scores summary file
     */
 
-    all_scores = combine_all_scores(overall_ost_scores.combine(
-                                    for_tb_tool_scores.ifEmpty([]).combine(
-                                    for_dd_tool_scores.ifEmpty([]).combine(
-                                    for_vina_tool_scores.ifEmpty([]).combine(
-                                    for_smina_tool_scores.ifEmpty([]).combine(
-                                    for_gnina_tool_scores.ifEmpty([])))))))
+    if (params.tools != /edmdock/) {
+        all_scores = combine_all_scores(overall_ost_scores.ifEmpty([]).combine(
+                                        for_tb_tool_scores.ifEmpty([]).combine(
+                                        for_dd_tool_scores.ifEmpty([]).combine(
+                                        for_vina_tool_scores.ifEmpty([]).combine(
+                                        for_smina_tool_scores.ifEmpty([]).combine(
+                                        for_gnina_tool_scores.ifEmpty([])))))))
+    }
 }

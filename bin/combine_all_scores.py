@@ -90,6 +90,8 @@ if gnina_sdfs:
     )
     all_scores = pd.merge(all_scores, gnina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
 
-# Write the combined scores to the output file
+# remove empty columns
+all_scores = all_scores.dropna(how='all', axis=1)
 
+# Write the combined scores to the output file
 all_scores.to_csv(out_file, index=False)
