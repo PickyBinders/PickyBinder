@@ -14,11 +14,15 @@ process pdb_to_sdf {
     val(out_dir)
 
     output:
-    path ("*.sdf")
+    path ("*.sdf"), emit: sdf_files
+    path ("pdb_to_sdf*.log")
 
     script:
     """
     python3 $baseDir/bin/pdb_to_sdf.py ${prediction_pdb}
+
+    time_date=\$(date +"%y-%m-%d-%T")
+    ln -s .command.log pdb_to_sdf_\${time_date}.log
     """
 }
 
