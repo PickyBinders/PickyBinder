@@ -10,10 +10,12 @@ for all binding pockets identified by P2Rank or for a specific user-defined bind
 
 ### Recent changes
 
-* Integration of EDMDock
-* Workflow report is set in nextflow.config and therefor removed from the command
-* 
-
+* Integration of EDMDock (includes updates of nextflow.config and params.config.in).
+* The output summary file contains besides the OpenStructure BiSyRMSD and lDDT-PLI also the scores from the 
+individual tools.
+* Option to turn off ligand scoring
+* Option to change the parameters of the docking tools
+* Workflow report is set in nextflow.config and therefor removed from the nextflow command.
 
 ## Overview
 
