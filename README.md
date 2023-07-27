@@ -8,6 +8,13 @@ lDDT-PLI scores calculated with OpenStructure for each predicted ligand pose. Fo
 AutoDock family, the workflow conducts besides blind docking also ligand prediction either
 for all binding pockets identified by P2Rank or for a specific user-defined binding site.
 
+### Recent changes
+
+* Integration of EDMDock
+* Workflow report is set in nextflow.config and therefor removed from the command
+* 
+
+
 ## Overview
 
 PickyBinder is a nextflow pipeline. Information about Nextflow can be found here https://www.nextflow.io/ 
@@ -31,7 +38,8 @@ gives information about each process including the used resources.
 
 ### Nextflow
 
-The workflow has been tested using Nextflow 20.10.0. Get Nextflow from https://www.nextflow.io/ .
+The workflow has been tested using Nextflow version 20.10.0. up to 23.04.2. 
+Get Nextflow from https://www.nextflow.io/ .
 
 ### Protein-ligand prediction tools
 
@@ -121,7 +129,7 @@ when using directories for the input definition.
 General command to run the pipeline:
 
 ```
-nextflow run <path-to-PickyBinder-directory>/main.nf -profile slurm -with-report report.html <Nextflow options> <Workflow options>
+nextflow run <path-to-PickyBinder-directory>/main.nf -profile slurm <Nextflow options> <Workflow options>
 ```
 
 The workflow execution was built to run with SLURM, but it is also possible to run it locally (remove **-profile slurm**)
