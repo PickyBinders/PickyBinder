@@ -30,8 +30,17 @@ process diffdock {
     python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
        ${params.diffdock_params}
 
-    for dir in diffdock_predictions/*; do for file in \${dir}/*; do mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file);done;done
-
+    for dir in diffdock_predictions/*;
+    do
+        if [ "\$(ls -A \$dir)" ]
+        then
+            for file in \${dir}/*
+            do
+                mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file)
+            done
+        fi
+    done
+    
     time_date=\$(date +"%y-%m-%d-%T")
     ln -s .command.log diffdock_\${time_date}.log
     """
