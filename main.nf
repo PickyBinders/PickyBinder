@@ -404,7 +404,7 @@ workflow {
 
         // single sample version
         edmdock_out = edmdock_single(edm_dock_input, edmdock_tool.collect())
-        edmdock_sdfs = pdb_to_sdf(edmdock_out.flatten().filter{ it =~ /\// }.collect(), "predictions/edmdock/results")
+        edmdock_sdfs = pdb_to_sdf(edmdock_out.flatten().filter{ it =~ /\// }.collect(), "predictions/edmdock/sdf_files")
 
         // batch version
         //edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
@@ -584,7 +584,7 @@ workflow {
 
         // edmdock
         if (params.tools =~ /edmdock/) {
-            scoring_ref.combine(edmdock_sdfs.flatten().map{[it.simpleName.split('_pocket')[0], it]}.groupTuple(), by: 0)
+            scoring_ref.combine(edmdock_sdfs.sdf_files.flatten().map{[it.simpleName.split('_pocket')[0], it]}.groupTuple(), by: 0)
                        .set { edm_scoring_input }
 
             edm_scores = edm_ost(edm_scoring_input, Channel.value( 'edmdock' ))
