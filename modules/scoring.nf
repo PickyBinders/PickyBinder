@@ -59,7 +59,7 @@ process ost_scoring {
 }
 
 
-process score_summary {
+process ost_score_summary {
     publishDir "$params.OUTPUT", mode: 'copy'
 
     input:

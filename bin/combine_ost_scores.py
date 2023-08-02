@@ -59,6 +59,7 @@ for file in files:
 score_df.Rank = pd.to_numeric(score_df.Rank, errors='coerce')
 score_df.sort_values(by=['Pocket', 'Rank'], inplace=True)
 
+# naming of the outfile
 if tool_name == 'vina' or tool_name == 'smina' or tool_name == 'gnina':
     pocket_nr = score_df.iloc[0]['Pocket']
     out_file = complex_name + '_' + pocket_nr + '_' + tool_name + '_score_summary.csv'

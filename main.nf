@@ -185,7 +185,7 @@ include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
 include { pdb_to_sdf } from "./modules/scoring"
-include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; score_summary } from "./modules/scoring"
+include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
 include { edmdock; edmdock_single } from "./modules/edmdock"
@@ -618,12 +618,12 @@ workflow {
 
 
         // create ligand score summary file
-        overall_ost_scores = score_summary(tb_scores_for_summary.ifEmpty([]).combine(
-                                   dd_scores_for_summary.ifEmpty([]).combine(
-                                   vina_scores_for_summary.ifEmpty([]).combine(
-                                   smina_scores_for_summary.ifEmpty([]).combine(
-                                   gnina_scores_for_summary.ifEmpty([]).combine(
-                                   edmdock_scores_for_summary.ifEmpty([])))))))
+        overall_ost_scores = ost_score_summary(tb_scores_for_summary.ifEmpty([]).combine(
+                                               dd_scores_for_summary.ifEmpty([]).combine(
+                                               vina_scores_for_summary.ifEmpty([]).combine(
+                                               smina_scores_for_summary.ifEmpty([]).combine(
+                                               gnina_scores_for_summary.ifEmpty([]).combine(
+                                               edmdock_scores_for_summary.ifEmpty([])))))))
     }
     else {
         overall_ost_scores = Channel.empty()
@@ -631,7 +631,7 @@ workflow {
 
 
     /*
-    * combine tool scores to ost scores summary file
+    * combine tool scores with ost scores summary file
     */
 
     if (params.tools != /edmdock/) {
