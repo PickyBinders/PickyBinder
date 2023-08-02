@@ -22,7 +22,8 @@ process edmdock {
 
     script:
     """
-    mkdir -p dataset
+    mkdir -p dataset local_run
+    mkdir -p local_run/paper_baseline
     while read -r line;
     do
         prot=\$(echo \$line | cut -d',' -f1);
@@ -36,8 +37,8 @@ process edmdock {
 	    echo "\${f//\$'\n'/,}" > dataset/\${box%.box}/box.csv;
     done < edmdock_samples.csv
 
-    cp -r runs/ local_run/
-    rm local_run/paper_baseline/results/*
+    cp runs/paper_baseline/config.yml local_run/paper_baseline/config.yml
+    cp runs/paper_baseline/weights.ckpt local_run/paper_baseline/weights.ckpt
 
     export PYTHONPATH="\${PYTHONPATH}:$PWD"
 
@@ -45,6 +46,7 @@ process edmdock {
     python scripts/dock.py --run_path local_run/paper_baseline --dataset_path dataset
 
     mv local_run/paper_baseline/results/ .
+    rm -rf local_run
     """
 }
 
@@ -63,8 +65,8 @@ process edmdock_single {
 
     script:
     """
-    mkdir dataset
-    mkdir dataset/${complex}_${pocket}
+    mkdir -p dataset local_run
+    mkdir -p dataset/${complex}_${pocket} local_run/paper_baseline
     mv ${pdb_Hs} dataset/${complex}_${pocket}/protein.pdb
     mv ${preped_ligand} dataset/${complex}_${pocket}/ligand.sdf
     cat ${box_file} | cut -d' ' -f3 > tmp.txt
@@ -72,8 +74,8 @@ process edmdock_single {
     echo "\${f//\$'\n'/,}" > box.csv
     mv box.csv dataset/${complex}_${pocket}/
 
-    cp -r runs/ local_run/
-    rm local_run/paper_baseline/results/*
+    cp runs/paper_baseline/config.yml local_run/paper_baseline/config.yml
+    cp runs/paper_baseline/weights.ckpt local_run/paper_baseline/weights.ckpt
 
     export PYTHONPATH="\${PYTHONPATH}:$PWD"
 
