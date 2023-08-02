@@ -165,8 +165,12 @@ for ref in ref_sdf_files:
                     print("error: " + str(e))
                     no_embedding.append(ligand)
 
-                with Chem.SDWriter(ligand_preped) as w:
-                    w.write(mol)
+                try:
+                    with Chem.SDWriter(ligand_preped) as w:
+                        w.write(mol)
+                except Exception as e:
+                    print("Error: cannot write ligand_preped.sdf file")
+                    print("error: " + str(e))
 
                 if ligand_sdf_resnum_name != ligand_sdf_name:
                     shutil.copy(sdf_file, resnum_sdf_file)
@@ -216,9 +220,12 @@ for ref in ref_sdf_files:
                     print("Error: cannot embed molecule")
                     print("error: " + str(e))
                     no_embedding.append(ligand)
-
-                with Chem.SDWriter(ligand_preped) as w:
-                    w.write(mol)
+                try:
+                    with Chem.SDWriter(ligand_preped) as w:
+                        w.write(mol)
+                except Exception as e:
+                    print("Error: cannot write ligand_preped.sdf file")
+                    print("error: " + str(e))
 
                 print("ligand preparation done")
             else:
