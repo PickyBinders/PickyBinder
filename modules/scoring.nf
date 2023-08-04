@@ -4,7 +4,7 @@
 
 params.OUTPUT = "$launchDir/scores"
 
-process pdb_to_sdf {
+process pdb_to_sdf_batch {
     publishDir "${out_dir}", mode: 'copy'
     container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
@@ -23,6 +23,25 @@ process pdb_to_sdf {
 
     time_date=\$(date +"%y-%m-%d-%T")
     ln -s .command.log pdb_to_sdf_\${time_date}.log
+    """
+}
+
+
+process pdb_to_sdf_single {
+    publishDir "${out_dir}", mode: 'copy'
+    container "${params.ost_sing}"
+    containerOptions "-B $baseDir/bin"
+
+    input:
+    tuple val(complex), val (receptor), path(prediction_pdb)
+    val(out_dir)
+
+    output:
+    path ("*.sdf"), emit: sdf_files
+
+    script:
+    """
+    python3 $baseDir/bin/pdb_to_sdf.py ${prediction_pdb}
     """
 }
 

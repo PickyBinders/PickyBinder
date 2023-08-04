@@ -184,7 +184,7 @@ include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_p
 include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
-include { pdb_to_sdf } from "./modules/scoring"
+include { pdb_to_sdf_batch as edmdock_pdb_to_sdf_batch; pdb_to_sdf_single as edmdock_pdb_to_sdf_single} from "./modules/scoring"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
@@ -407,7 +407,7 @@ workflow {
 
         // single sample version
         edmdock_out = edmdock_single(edm_dock_input, edmdock_tool.collect())
-        edmdock_sdfs = pdb_to_sdf(edmdock_out.flatten().filter{ it =~ /\// }.collect(), "predictions/edmdock/sdf_files")
+        edmdock_sdfs = edmdock_pdb_to_sdf_single(edmdock_out.map{ [ it[0], it[1], it[3] ] }, "predictions/edmdock/sdf_files")
 
         // batch version
         //edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
@@ -417,7 +417,7 @@ workflow {
         //              .set{ edmdock_samples_file }
 
         //edmdock_out = edmdock(edmdock_samples_file, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), boxes.flatten().filter{it =~ /\//}.collect(), edmdock_tool.collect())
-        //edmdock_sdfs = pdb_to_sdf(edmdock_out.pdbs, "predictions/edmdock/results")
+        //edmdock_sdfs = edmdock_pdb_to_sdf_batch(edmdock_out.pdbs, "predictions/edmdock/results")
     }
     else {
         edmdock_scores_for_summary = Channel.empty()
@@ -587,7 +587,7 @@ workflow {
 
         // edmdock
         if (params.tools =~ /edmdock/) {
-            scoring_ref.combine(edmdock_sdfs.sdf_files.flatten().map{[it.simpleName.split('_pocket')[0], it]}.groupTuple(), by: 0)
+            scoring_ref.combine(edmdock_sdfs.sdf_files.collect().flatten().map{[it.simpleName.split('_pocket')[0], it]}.groupTuple(), by: 0)
                        .set { edm_scoring_input }
 
             edm_scores = edm_ost(edm_scoring_input, Channel.value( 'edmdock' ))
