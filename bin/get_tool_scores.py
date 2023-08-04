@@ -20,10 +20,16 @@ def extract_vina_scores(vina_sdf_files):
             pattern = "free_energy"
             for line in f:
                 if re.search(pattern, line):
+                    filename = file.split('/')[-1]
+                    complex = filename.split('_pocket')[0]
+                    pocket = filename.split('_')[-3]
+                    rank = filename.split('_')[-1].split('.sdf')[0]
+                    free_energy = line.split(':')[1].split(',')[0].strip()
+                    intermolecular_energy = line.split(':')[2].split(',')[0].strip()
+                    internal_energy = line.split(':')[3].split('}')[0].strip()
+
                     vina_scores.append(
-                        ['vina', file.split('_pocket')[0], file.split('_')[-3], file.split('_')[-1].split('.sdf')[0],
-                         line.split(':')[1].split(',')[0], line.split(':')[2].split(',')[0],
-                         line.split(':')[3].split('}')[0]]
+                        ['vina', complex, pocket, rank, free_energy, intermolecular_energy, internal_energy]
                     )
 
     return vina_scores
@@ -39,9 +45,14 @@ def extract_smina_scores(smina_sdf_files):
     for file in smina_sdf_files:
         with open(file) as f:
             for line in (f.readlines()[-3:-2]):
+                filename = file.split('/')[-1]
+                complex = filename.split('_pocket')[0]
+                pocket = filename.split('_')[-3]
+                rank = filename.split('_')[-1].split('.sdf')[0]
+                minimized_affinity = line.rstrip()
+
                 smina_scores.append(
-                    ['smina', file.split('_pocket')[0], file.split('_')[-3], file.split('_')[-1].split('.sdf')[0],
-                     line.rstrip()]
+                    ['smina', complex, pocket, rank, minimized_affinity]
                 )
 
     return smina_scores
@@ -55,6 +66,11 @@ def extract_gnina_scores(gnina_sdf_files):
     """
     gnina_scores = []
     for file in gnina_sdf_files:
+        filename = file.split('/')[-1]
+        complex = filename.split('_pocket')[0]
+        pocket = filename.split('_')[-3]
+        rank = filename.split('_')[-1].split('.sdf')[0]
+
         with open(file) as f:
             for line in (f.readlines()[-15:-14]):
                 minimized_affinity = line.rstrip()
@@ -68,8 +84,7 @@ def extract_gnina_scores(gnina_sdf_files):
                 cnn_affinity = line.rstrip()
 
         gnina_scores.append(
-            ['gnina', file.split('_pocket')[0], file.split('_')[-3], file.split('_')[-1].split('.sdf')[0],
-             minimized_affinity, cnn_score, cnn_affinity]
+            ['gnina', complex, pocket, rank, minimized_affinity, cnn_score, cnn_affinity]
         )
 
     return gnina_scores

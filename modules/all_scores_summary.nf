@@ -21,7 +21,7 @@ process combine_all_scores {
         echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand,center_x,center_y,center_z' > ligand_score_summary.csv
     fi
 
-    combine_all_scores.py
+    combine_all_scores.py $launchDir
     """
 
 }

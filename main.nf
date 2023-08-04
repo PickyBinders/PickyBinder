@@ -635,11 +635,18 @@ workflow {
     */
 
     if (params.tools != /edmdock/) {
-        all_scores = combine_all_scores(overall_ost_scores.ifEmpty([]).combine(
-                                        for_tb_tool_scores.ifEmpty([]).combine(
-                                        for_dd_tool_scores.ifEmpty([]).combine(
-                                        for_vina_tool_scores.ifEmpty([]).combine(
-                                        for_smina_tool_scores.ifEmpty([]).combine(
-                                        for_gnina_tool_scores.ifEmpty([])))))))
+        overall_ost_scores.ifEmpty([]).combine(for_tb_tool_scores.ifEmpty([])
+                                      .combine(for_dd_tool_scores.ifEmpty([])
+                                      .combine(for_vina_tool_scores.ifEmpty([])
+                                      .combine(for_smina_tool_scores.ifEmpty([])
+                                      .combine(for_gnina_tool_scores.ifEmpty([]))))))
+                                      .flatten()
+                                      .branch{
+                                            for_linking: it.name == 'ligand_score_summary.csv' || it.name == 'dd_file_names.txt'
+                                            other: true
+                                            }
+                                      .set{ all_scores_input }
+        all_scores_input.for_linking.view()
+        all_scores = combine_all_scores(all_scores_input.for_linking.collect())
     }
 }

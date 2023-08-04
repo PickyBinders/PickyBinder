@@ -3,6 +3,7 @@
 import csv
 import glob
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -14,8 +15,8 @@ from get_tool_scores import (
     extract_gnina_scores,
 )
 
-
 # Set input and output file paths
+launchdir = sys.argv[1]
 ligand_score_summary_file = 'ligand_score_summary.csv'
 out_file = 'all_scores_summary.csv'
 
@@ -31,7 +32,7 @@ all_scores['center_y'] = all_scores['center_y'].astype(str)
 all_scores['center_z'] = all_scores['center_z'].astype(str)
 
 # Tankbind
-tankbind_files = [f for f in glob.glob("*_tankbind.csv")]
+tankbind_files = [f for f in glob.glob(launchdir + "/predictions/tankbind/*/*_tankbind.csv")]
 
 if tankbind_files:
     tankbind_scores_list = extract_tankbind_scores(tankbind_files)
@@ -60,7 +61,7 @@ if os.path.exists(diffdock_file):
     all_scores = pd.merge(all_scores, diffdock_scores, how="outer", on=["Tool", "Complex", "Rank"])
 
 # Vina
-vina_sdfs = [f for f in glob.glob("*_vina_*.sdf")]
+vina_sdfs = [f for f in glob.glob(launchdir + "/predictions/vina/vina_predictions/*/*/*_vina_*.sdf")]
 if vina_sdfs:
     vina_scores_list = extract_vina_scores(vina_sdfs)
     vina_scores = pd.DataFrame(
@@ -71,7 +72,7 @@ if vina_sdfs:
     all_scores = pd.merge(all_scores, vina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
 
 # SMINA
-smina_sdfs = [f for f in glob.glob("*_smina_*.sdf")]
+smina_sdfs = [f for f in glob.glob(launchdir + "/predictions/smina/*/*/*_smina_*.sdf")]
 if smina_sdfs:
     smina_scores_list = extract_smina_scores(smina_sdfs)
     smina_scores = pd.DataFrame(
@@ -81,7 +82,7 @@ if smina_sdfs:
     all_scores = pd.merge(all_scores, smina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
 
 # GNINA
-gnina_sdfs = [f for f in glob.glob("*_gnina_*.sdf")]
+gnina_sdfs = [f for f in glob.glob(launchdir + "/predictions/gnina/*/*/*_gnina_*.sdf")]
 if gnina_sdfs:
     gnina_scores_list = extract_gnina_scores(gnina_sdfs)
     gnina_scores = pd.DataFrame(
