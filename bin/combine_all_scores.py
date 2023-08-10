@@ -18,18 +18,17 @@ from get_tool_scores import (
 # Set input and output file paths
 launchdir = sys.argv[1]
 ligand_score_summary_file = 'ligand_score_summary.csv'
-out_file = 'all_scores_summary.csv'
 
 # Load the ligand score summary file
-all_scores = pd.read_csv(ligand_score_summary_file)
+ost_scores = pd.read_csv(ligand_score_summary_file)
 
 # Convert columns to appropriate types
-all_scores['Rank'] = all_scores['Rank'].fillna(0).astype(int).astype(str)
-all_scores['lddt_pli'] = all_scores['lddt_pli'].astype(str)
-all_scores['rmsd'] = all_scores['rmsd'].astype(str)
-all_scores['center_x'] = all_scores['center_x'].astype(str)
-all_scores['center_y'] = all_scores['center_y'].astype(str)
-all_scores['center_z'] = all_scores['center_z'].astype(str)
+ost_scores['Rank'] = ost_scores['Rank'].fillna(0).astype(int).astype(str)
+ost_scores['lddt_pli'] = ost_scores['lddt_pli'].astype(str)
+ost_scores['rmsd'] = ost_scores['rmsd'].astype(str)
+ost_scores['center_x'] = ost_scores['center_x'].astype(str)
+ost_scores['center_y'] = ost_scores['center_y'].astype(str)
+ost_scores['center_z'] = ost_scores['center_z'].astype(str)
 
 # Tankbind
 tankbind_files = [f for f in glob.glob(launchdir + "/predictions/tankbind/*/*_tankbind.csv")]
@@ -40,12 +39,16 @@ if tankbind_files:
         tankbind_scores_list,
         columns=['Tool', 'Complex', 'Pocket', 'Rank', 'TANKBind-Affinity']
     )
-    all_scores = tankbind_scores.set_index(['Tool', 'Complex', 'Pocket']).combine_first(
-        all_scores.set_index(['Tool', 'Complex', 'Pocket'])).reset_index()
-    all_scores = all_scores.reindex(
+    tb_summary = ost_scores[ost_scores.Tool == 'tankbind'].copy()
+    tb_summary = tankbind_scores.set_index(['Tool', 'Complex', 'Pocket']).combine_first(
+        tb_summary.set_index(['Tool', 'Complex', 'Pocket'])).reset_index()
+    tb_summary = tb_summary.reindex(
         columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference_Ligand', 'center_x', 'center_y',
                  'center_z', 'TANKBind-Affinity']
     )
+    tb_summary = tb_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
+                             'TANKBind-Affinity', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    tb_summary.to_csv('tankbind_summary.csv', index=False)
 
 # Diffdock
 diffdock_file = 'dd_file_names.txt'
@@ -58,7 +61,10 @@ if os.path.exists(diffdock_file):
         diffdock_scores_list,
         columns=['Tool', 'Complex', 'Rank', 'DiffDock-Confidence']
     )
-    all_scores = pd.merge(all_scores, diffdock_scores, how="outer", on=["Tool", "Complex", "Rank"])
+    dd_summary = ost_scores[ost_scores.Tool == 'diffdock'].copy()
+    dd_summary = pd.merge(dd_summary, diffdock_scores, how="outer", on=["Tool", "Complex", "Rank"])
+    dd_summary = dd_summary[['Tool', 'Complex', 'Rank', 'DiffDock-Confidence', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    dd_summary.to_csv('diffdock_summary.csv', index=False)
 
 # Vina
 vina_sdfs = [f for f in glob.glob(launchdir + "/predictions/vina/vina_predictions/*/*/*_vina_*.sdf")]
@@ -69,7 +75,12 @@ if vina_sdfs:
         columns=['Tool', 'Complex', 'Pocket', 'Rank', 'Vina-free_energy', 'Vina-intermolecular_energy',
                  'Vina-internal_energy']
     )
-    all_scores = pd.merge(all_scores, vina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
+    vina_summary = ost_scores[ost_scores.Tool == 'vina'].copy()
+    vina_summary = pd.merge(vina_summary, vina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
+    vina_summary = vina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
+                                 'Vina-free_energy', 'Vina-intermolecular_energy', 'Vina-internal_energy', 'lddt_pli',
+                                 'rmsd', 'Reference_Ligand']]
+    vina_summary.to_csv('vina_summary.csv', index=False)
 
 # SMINA
 smina_sdfs = [f for f in glob.glob(launchdir + "/predictions/smina/*/*/*_smina_*.sdf")]
@@ -79,7 +90,11 @@ if smina_sdfs:
         smina_scores_list,
         columns=['Tool', 'Complex', 'Pocket', 'Rank', 'SMINA-minimizedAffinity']
     )
-    all_scores = pd.merge(all_scores, smina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
+    smina_summary = ost_scores[ost_scores.Tool == 'smina'].copy()
+    smina_summary = pd.merge(smina_summary, smina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
+    smina_summary = smina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
+                                   'SMINA-minimizedAffinity', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    smina_summary.to_csv('smina_summary.csv', index=False)
 
 # GNINA
 gnina_sdfs = [f for f in glob.glob(launchdir + "/predictions/gnina/*/*/*_gnina_*.sdf")]
@@ -89,10 +104,9 @@ if gnina_sdfs:
         gnina_scores_list,
         columns=['Tool', 'Complex', 'Pocket', 'Rank', 'GNINA-minimizedAffinity', 'GNINA-CNNScore', 'GNINA-CNNAffinity']
     )
-    all_scores = pd.merge(all_scores, gnina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
-
-# remove empty columns
-all_scores = all_scores.dropna(how='all', axis=1)
-
-# Write the combined scores to the output file
-all_scores.to_csv(out_file, index=False)
+    gnina_summary = ost_scores[ost_scores.Tool == 'gnina'].copy()
+    gnina_summary = pd.merge(gnina_summary, gnina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
+    gnina_summary = gnina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
+                                   'GNINA-minimizedAffinity', 'GNINA-CNNScore', 'GNINA-CNNAffinity', 'lddt_pli',
+                                   'rmsd', 'Reference_Ligand']]
+    gnina_summary.to_csv('gnina_summary.csv', index=False)

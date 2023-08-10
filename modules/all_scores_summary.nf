@@ -12,7 +12,7 @@ process combine_all_scores {
     path (all_files_with_tool_scores)
 
     output:
-    path ("all_scores_summary.csv"), emit: all_score_summary
+    path ("*_summary.csv")
 
     script:
     """
