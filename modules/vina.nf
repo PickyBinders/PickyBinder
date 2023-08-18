@@ -43,7 +43,7 @@ process vina_prepare_ligand {
 process vina {
     publishDir "$params.OUTPUT/vina_predictions/${complex}/${pocket_nr}", mode: 'copy'
     conda "${params.vina_conda}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
     
     input:
     tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
@@ -65,7 +65,7 @@ process vina {
 process pdbtqToSdf {
     publishDir "$params.OUTPUT/vina_predictions/${complex}/${pocket_nr}", mode: 'copy'
     conda "${params.meeko_conda}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
     
     input:
     tuple val (complex), val (receptor), val (pocket_nr), path (pdbqt)

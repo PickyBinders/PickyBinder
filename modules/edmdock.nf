@@ -7,7 +7,6 @@ params.OUTPUT = "$launchDir/predictions/edmdock"
 process edmdock {
     publishDir "$params.OUTPUT", mode: 'copy'
     conda "${params.edmdock_conda}"
-    tag { complex }
 
     input:
     path (samples_file)
@@ -54,25 +53,25 @@ process edmdock {
 process edmdock_single {
     publishDir "$params.OUTPUT/${complex}", mode: 'copy'
     conda "${params.edmdock_conda}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
 
     input:
-    tuple val (complex), val (pocket), val (receptor), val (ligand), path (pdb_Hs), path (preped_ligand), path (box_file)
+    tuple val (complex), val (pocket_nr), val (receptor), val (ligand), path (pdb_Hs), path (preped_ligand), path (box_file)
     path (edmdock_tool)
 
     output:
-    tuple val(complex), val (receptor), val (pocket), path("${pocket}/*.pdb")
+    tuple val(complex), val (receptor), val (pocket_nr), path("${pocket_nr}/*.pdb")
 
     script:
     """
     mkdir -p dataset local_run
-    mkdir -p dataset/${complex}_${pocket} local_run/paper_baseline
-    mv ${pdb_Hs} dataset/${complex}_${pocket}/protein.pdb
-    mv ${preped_ligand} dataset/${complex}_${pocket}/ligand.sdf
+    mkdir -p dataset/${complex}_${pocket_nr} local_run/paper_baseline
+    mv ${pdb_Hs} dataset/${complex}_${pocket_nr}/protein.pdb
+    mv ${preped_ligand} dataset/${complex}_${pocket_nr}/ligand.sdf
     cat ${box_file} | cut -d' ' -f3 > tmp.txt
     f=\$(cat tmp.txt)
     echo "\${f//\$'\n'/,}" > box.csv
-    mv box.csv dataset/${complex}_${pocket}/
+    mv box.csv dataset/${complex}_${pocket_nr}/
 
     cp runs/paper_baseline/config.yml local_run/paper_baseline/config.yml
     cp runs/paper_baseline/weights.ckpt local_run/paper_baseline/weights.ckpt
@@ -82,7 +81,7 @@ process edmdock_single {
     python scripts/prepare.py --dataset_path dataset
     python scripts/dock.py --run_path local_run/paper_baseline --dataset_path dataset
 
-    mv local_run/paper_baseline/results ./${pocket}
+    mv local_run/paper_baseline/results ./${pocket_nr}
     rm -rf local_run
     """
 }

@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/predictions/smina"
 process smina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
     conda "${params.smina_conda}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
     
     input:
     tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
@@ -29,7 +29,7 @@ process smina {
 process smina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
     conda "${params.smina_conda}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
 
     input:
     tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdb), path (ligand_sdf), path (vina_box)

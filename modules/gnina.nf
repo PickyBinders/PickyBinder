@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/predictions/gnina"
 process gnina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
     container "${params.gnina_sing}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
     
     input:
     tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdbqt), path (ligand_pdbqt), path (vina_box)
@@ -29,7 +29,7 @@ process gnina {
 process gnina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
     container "${params.gnina_sing}"
-    tag { complex }
+    tag { "${complex}_${pocket_nr}" }
 
     input:
     tuple val (complex), val (ligand), val (receptor), val (pocket_nr), path (receptor_pdb), path (ligand_sdf), path (vina_box)
