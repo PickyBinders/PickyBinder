@@ -646,7 +646,7 @@ workflow {
                                             other: true
                                             }
                                       .set{ all_scores_input }
-        all_scores_input.for_linking.view()
+
         all_scores = combine_all_scores(all_scores_input.for_linking.collect())
     }
 }
