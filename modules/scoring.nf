@@ -31,6 +31,7 @@ process pdb_to_sdf_single {
     publishDir "${out_dir}", mode: 'copy'
     container "${params.ost_sing}"
     containerOptions "-B $baseDir/bin"
+    tag { complex }
 
     input:
     tuple val(complex), val (receptor), path(prediction_pdb)
