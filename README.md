@@ -11,7 +11,7 @@ for all binding pockets identified by P2Rank or for a specific user-defined bind
 ### Recent changes
 
 * Integration of EDMDock (includes updates of nextflow.config and params.config.in).
-* The output summary file contains besides the OpenStructure BiSyRMSD and lDDT-PLI also the scores from the 
+* A score summary file for each individual tool. 
 individual tools.
 * Option to turn off ligand scoring
 * Option to change the parameters of the docking tools
@@ -38,26 +38,28 @@ gives information about each process including the used resources.
 
 ## Dependencies
 
+
+
 ### Nextflow
 
 The workflow has been tested using Nextflow version 20.10.0. up to 23.04.2. 
-Get Nextflow from https://www.nextflow.io/ .
+Get Nextflow from https://www.nextflow.io/ . 
 
 ### Protein-ligand prediction tools
+
+The PickyBinder workflow has the capability to execute **Autodock Vina**, **SMINA**, **GNINA**, **DiffDock**, **TANKBind**, and
+**EDMDock**. The selection of which tools to incorporate into the workflow can be made when initiating the pipeline. 
+To effectively operate each specific tool, it is necessary to have the following dependencies installed: 
 
 - **Autodock Vina**: Get the Autodock Vina v1.2.5 executable from https://github.com/ccsb-scripps/AutoDock-Vina/releases 
 and create a Conda environment for the Python bindings as described in the Autodock Vina manual 
 (https://autodock-vina.readthedocs.io/en/latest/installation.html). Either install **meeko** 0.4.0 into the same Conda environment, 
 or make an own Conda environment for meeko (https://pypi.org/project/meeko/#2.-rdkit-molecule-from-docking-results).
 - **SMINA**: Get the Singularity image for SMINA v2020.12.10 (https://hub.docker.com/r/zengxinzhy/smina, tag:1.0).
-- **GNINA**: Get the Singularity image for GNINA v1.0.3 (https://hub.docker.com/r/marcus905/gnina-12/tags, digest: ea3dce32d4a5)
-or GNINA v1.0.2 (https://hub.docker.com/r/nmaus/gnina , digest: 7087cbf4dafd).
+- **GNINA**: Get the Singularity image for GNINA v1.0.3 (https://hub.docker.com/r/gnina/gnina/tags, tag: 1.0.3).
 - **DiffDock**: Create a Conda environment according to the setup guide at https://github.com/gcorso/DiffDock (commit 2c7d438).
 - **TANKBind**: Get Singularity image "tankbind_py38" (https://hub.docker.com/r/qizhipei/tankbind_py38, digest: 79a46540b547).
 - **EDMDock**: Get EDM-Dock dependencies from https://github.com/MatthewMasters/EDM-Dock and follow the instructions. 
-A conda environment can be built according to the [create_edmdock_conda.txt](environment_files/create_edmdock_conda.txt). 
-If DGSOL from https://github.com/MatthewMasters/DGSOL is not working, one can get it also from 
-https://www.mcs.anl.gov/~more/dgsol/.
 
 ### Other tools
 - **P2Rank**: Get P2Rank v2.4 executable from https://github.com/rdk/p2rank/releases .
@@ -78,7 +80,7 @@ Memory and time are already defined.
 
 The workflow can be run with multiple complexes at once. For each complex a receptor pdb file and a ligand sdf file
 must be provided. Each individual receptor/ligand must have its own file name otherwise the files will not be combined
-correctly during the workflow., but the same receptor/ligand can be used for several complexes.
+correctly during the workflow, but the same receptor/ligand can be used for several complexes.
 As reference for the BiSyRMSD and lDDT-PLI scoring with OpenStructure it is best to use the mmCIF file 
 of the receptor. But it is also possible to give a pdb file as the reference. 
 If the reference file is a pdb file, then the ligand sdf file is used as the reference ligand.
