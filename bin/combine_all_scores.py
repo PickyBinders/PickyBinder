@@ -24,11 +24,11 @@ ost_scores = pd.read_csv(ligand_score_summary_file)
 
 # Convert columns to appropriate types
 ost_scores['Rank'] = ost_scores['Rank'].fillna(0).astype(int).astype(str)
-ost_scores['lddt_pli'] = ost_scores['lddt_pli'].astype(str)
-ost_scores['rmsd'] = ost_scores['rmsd'].astype(str)
-ost_scores['center_x'] = ost_scores['center_x'].astype(str)
-ost_scores['center_y'] = ost_scores['center_y'].astype(str)
-ost_scores['center_z'] = ost_scores['center_z'].astype(str)
+ost_scores['lDDT-PLI'] = ost_scores['lDDT-PLI'].astype(str)
+ost_scores['BiSyRMSD'] = ost_scores['BiSyRMSD'].astype(str)
+ost_scores['Box_Center_x'] = ost_scores['Box_Center_x'].astype(str)
+ost_scores['Box_Center_y'] = ost_scores['Box_Center_y'].astype(str)
+ost_scores['Box_Center_z'] = ost_scores['Box_Center_z'].astype(str)
 
 # Tankbind
 tankbind_files = [f for f in glob.glob(launchdir + "/predictions/tankbind/*/*_tankbind.csv")]
@@ -43,11 +43,11 @@ if tankbind_files:
     tb_summary = tankbind_scores.set_index(['Tool', 'Complex', 'Pocket']).combine_first(
         tb_summary.set_index(['Tool', 'Complex', 'Pocket'])).reset_index()
     tb_summary = tb_summary.reindex(
-        columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lddt_pli', 'rmsd', 'Reference_Ligand', 'center_x', 'center_y',
-                 'center_z', 'TANKBind-Affinity']
+        columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lDDT-PLI', 'BiSyRMSD', 'Reference_Ligand', 'Box_Center_x',
+                 'Box_Center_y', 'Box_Center_z', 'TANKBind-Affinity']
     )
-    tb_summary = tb_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
-                             'TANKBind-Affinity', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    tb_summary = tb_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
+                             'TANKBind-Affinity', 'lDDT-PLI', 'BiSyRMSD', 'Reference_Ligand']]
     tb_summary.to_csv('tankbind_summary.csv', index=False)
 
 # Diffdock
@@ -63,7 +63,8 @@ if os.path.exists(diffdock_file):
     )
     dd_summary = ost_scores[ost_scores.Tool == 'diffdock'].copy()
     dd_summary = pd.merge(dd_summary, diffdock_scores, how="outer", on=["Tool", "Complex", "Rank"])
-    dd_summary = dd_summary[['Tool', 'Complex', 'Rank', 'DiffDock-Confidence', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    dd_summary = dd_summary[['Tool', 'Complex', 'Rank', 'DiffDock-Confidence', 'lDDT-PLI', 'BiSyRMSD',
+                             'Reference_Ligand']]
     dd_summary.to_csv('diffdock_summary.csv', index=False)
 
 # Vina
@@ -77,9 +78,9 @@ if vina_sdfs:
     )
     vina_summary = ost_scores[ost_scores.Tool == 'vina'].copy()
     vina_summary = pd.merge(vina_summary, vina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
-    vina_summary = vina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
-                                 'Vina-free_energy', 'Vina-intermolecular_energy', 'Vina-internal_energy', 'lddt_pli',
-                                 'rmsd', 'Reference_Ligand']]
+    vina_summary = vina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
+                                 'Vina-free_energy', 'Vina-intermolecular_energy', 'Vina-internal_energy', 'lDDT-PLI',
+                                 'BiSyRMSD', 'Reference_Ligand']]
     vina_summary.to_csv('vina_summary.csv', index=False)
 
 # SMINA
@@ -92,8 +93,8 @@ if smina_sdfs:
     )
     smina_summary = ost_scores[ost_scores.Tool == 'smina'].copy()
     smina_summary = pd.merge(smina_summary, smina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
-    smina_summary = smina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
-                                   'SMINA-minimizedAffinity', 'lddt_pli', 'rmsd', 'Reference_Ligand']]
+    smina_summary = smina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
+                                   'SMINA-minimizedAffinity', 'lDDT-PLI', 'BiSyRMSD', 'Reference_Ligand']]
     smina_summary.to_csv('smina_summary.csv', index=False)
 
 # GNINA
@@ -106,7 +107,7 @@ if gnina_sdfs:
     )
     gnina_summary = ost_scores[ost_scores.Tool == 'gnina'].copy()
     gnina_summary = pd.merge(gnina_summary, gnina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
-    gnina_summary = gnina_summary[['Tool', 'Complex', 'Pocket', 'center_x', 'center_y', 'center_z', 'Rank',
-                                   'GNINA-minimizedAffinity', 'GNINA-CNNScore', 'GNINA-CNNAffinity', 'lddt_pli',
-                                   'rmsd', 'Reference_Ligand']]
+    gnina_summary = gnina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
+                                   'GNINA-minimizedAffinity', 'GNINA-CNNScore', 'GNINA-CNNAffinity', 'lDDT-PLI',
+                                   'BiSyRMSD', 'Reference_Ligand']]
     gnina_summary.to_csv('gnina_summary.csv', index=False)

@@ -67,10 +67,27 @@ process ost_scoring {
     do
         if [[ ${ref_receptor} == *.pdb ]]
         then
-            ost compare-ligand-structures --substructure-match -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} -o \${model%.sdf}.json --lddt-pli --rmsd
+            ost compare-ligand-structures \
+                --substructure-match \
+                -m ${model_receptor} \
+                -ml \${model} \
+                -r ${ref_receptor} \
+                -rl ${ref_ligand} \
+                -o \${model%.sdf}.json \
+                --lddt-pli \
+                --rmsd \
+                || continue
         elif [[ ${ref_receptor} == *.cif ]]
         then
-            ost compare-ligand-structures --substructure-match -m ${model_receptor} -ml \${model} -r ${ref_receptor} -o \${model%.sdf}.json --lddt-pli --rmsd
+            ost compare-ligand-structures \
+                --substructure-match \
+                -m ${model_receptor} \
+                -ml \${model} \
+                -r ${ref_receptor} \
+                -o \${model%.sdf}.json \
+                --lddt-pli \
+                --rmsd \
+                || continue
         fi
     done
 
@@ -92,7 +109,7 @@ process ost_score_summary {
     """
     if [[ ! -f $launchDir/scores/ligand_score_summary.csv ]]
     then
-        echo 'Tool,Complex,Pocket,Rank,lddt_pli,rmsd,Reference_Ligand,center_x,center_y,center_z' > score_summary.csv
+        echo 'Tool,Complex,Pocket,Rank,lDDT-PLI,BiSyRMSD,Reference_Ligand,Box_Center_x,Box_Center_y,Box_Center_z' > score_summary.csv
         grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     else
         cp $launchDir/scores/ligand_score_summary.csv score_summary.csv
