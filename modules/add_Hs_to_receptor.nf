@@ -6,7 +6,8 @@ params.OUTPUT = "$launchDir/preprocessing/receptor_Hs"
 
 process add_Hs_to_receptor {
     publishDir "$params.OUTPUT", mode: 'copy'
-    container "${params.adfr_sing}"
+    //container "${params.adfr_sing}"
+    conda "${params.vina_conda}"
     tag { receptor }
 
     input:
@@ -17,6 +18,10 @@ process add_Hs_to_receptor {
 
     script:
     """
-    reduce ${pdb_file} > ${receptor}_Hs.pdb
+    ln ${pdb_file} ${receptor}_input.pdb
+    run_reduce.py ${receptor}_input.pdb ${receptor} ${params.adfr_sing} $baseDir/reduce_wwPDB_het_dict.txt
+    rm ${receptor}_input.pdb
     """
 }
+
+//reduce -DB $baseDir/reduce_wwPDB_het_dict.txt ${pdb_file} > ${receptor}_Hs.pdb
