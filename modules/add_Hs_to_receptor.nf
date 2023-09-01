@@ -22,3 +22,21 @@ process add_Hs_to_receptor {
     rm ${receptor}_input.pdb
     """
 }
+
+
+process fix_pdb {
+    publishDir "$params.OUTPUT", mode: 'copy'
+    conda "${params.pdbfixer_conda}"
+    tag { receptor }
+
+    input:
+    tuple val (receptor), path (pdb_file, stageAs: "input.pdb")
+
+    output:
+    tuple val (receptor), path ("*_Hs.pdb"), emit: pdb_Hs
+
+    script:
+    """
+    pdbfixer_fix_pdb.py ${pdb_file} ${receptor}
+    """
+}

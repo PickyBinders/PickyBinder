@@ -175,7 +175,7 @@ Channel
 */
 
 include { ligand_preprocessing; ligand_preprocessing_single; ligand_preprocessing_log } from "./modules/ligand_preprocessing"
-include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
+include { add_Hs_to_receptor; fix_pdb } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_boxes_predicted_pockets; docking_box_defined_BS } from "./modules/docking_box"
@@ -184,11 +184,11 @@ include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_p
 include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
+include { edmdock; edmdock_single } from "./modules/edmdock"
 include { pdb_to_sdf_batch as edmdock_pdb_to_sdf_batch; pdb_to_sdf_single as edmdock_pdb_to_sdf_single} from "./modules/scoring"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
-include { edmdock; edmdock_single } from "./modules/edmdock"
 
 
 /*
@@ -407,7 +407,9 @@ workflow {
 
     if (params.tools =~ /edmdock/) {
 
-        identifiers.combine(pdb_Hs, by: 0)
+        pdbfixer_fixed_pdbs = fix_pdb(pdb_Hs)
+
+        identifiers.combine(pdbfixer_fixed_pdbs, by: 0)
                    .combine(ligand_tuple.map{ [it[1], it[0]]}, by: 1)
                    .map { [ it[2], it[0], it[1], it[3], it[4] ] }
                    .combine(boxes.transpose(), by: 0)   // complex, ligand, receptor, preped_receptor, preped_ligand, box_file
@@ -610,7 +612,7 @@ workflow {
                           .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
                           .set{ edm_scores_for_coordinates }    // receptor, pocket, complex, edmdock_score_csv
 
-            edm_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, vina_score_csv, x, y, z
+            edm_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, edmdock_score_csv, x, y, z
                                       .set{ edm_scores_for_coordinates_p2rank }
 
             edm_scores_for_coordinates.combine(defined_coordinates, by:  [0, 1, 2])
