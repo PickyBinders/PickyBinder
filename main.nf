@@ -174,7 +174,7 @@ Channel
 * include the modules
 */
 
-include { ligand_preprocessing } from "./modules/ligand_preprocessing"
+include { ligand_preprocessing; ligand_preprocessing_single; ligand_preprocessing_log } from "./modules/ligand_preprocessing"
 include { add_Hs_to_receptor } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
@@ -202,7 +202,17 @@ workflow {
     */
 
     // ligand preprocessing
-    sdf_for_docking = ligand_preprocessing(ref_sdf_files.unique().collect(), mol_files.unique().collect().ifEmpty([]))
+    if (params.ligand_prep == "sdf") {
+        //sdf_for_docking = ligand_preprocessing(ref_sdf_files.unique().collect(), mol_files.unique().collect().ifEmpty([]))
+        sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] })
+    }
+    else if (params.ligand_prep == "mol2") {
+        no_sdf_files = Channel.empty()
+        //sdf_for_docking = ligand_preprocessing(no_sdf_files.ifEmpty([]), mol_files.unique().collect())
+        sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[0], it[2] ] })
+    }
+
+    ligand_preprocessing_log(sdf_for_docking.ligand_prep_log.collect())
 
     sdf_for_docking.sdf_files.flatten()
                              .map{ [it.simpleName.toString().split("_preped")[0], it] }

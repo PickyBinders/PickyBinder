@@ -11,6 +11,7 @@ import shutil
 import re
 import pandas as pd
 import os
+import glob
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import rdBase
@@ -18,7 +19,6 @@ from io import StringIO
 import csv
 
 naming = sys.argv[1]
-ref_sdf_files = sys.argv[2:]
 
 
 def uncharge(mol):
@@ -81,22 +81,28 @@ def mol_and_smiles_from_file(sdf_file, mol2_file):
     """
     Convert a sdf or mol2 file to a RDKIT mol and further to a smiles string
     """
-    mol = Chem.MolFromMolFile(sdf_file, sanitize=False)
-    problem = False
+    sdf_file_path = Path() / f"{sdf_file}"
+    mol2_file_path = Path() / f"{mol2_file}"
+    if sdf_file_path.exists():
+        mol = Chem.MolFromMolFile(sdf_file, sanitize=False)
+        problem = False
 
-    try:
-        Chem.SanitizeMol(mol)
-        mol = Chem.RemoveHs(mol)
-        smiles = Chem.MolToSmiles(mol)
-    except Exception as e:
-        print("ligand preparation using sdf file failed")
-        print("error: " + str(e))
-        smiles = str(e)
+        try:
+            Chem.SanitizeMol(mol)
+            mol = Chem.RemoveHs(mol)
+            smiles = Chem.MolToSmiles(mol)
+        except Exception as e:
+            print("ligand preparation using sdf file failed")
+            print("error: " + str(e))
+            smiles = str(e)
+            problem = True
+    else:
+        print("no sdf file provided for ligand preparation")
         problem = True
 
-    if problem and mol2_file.exists():
-        print("try to use mol2 file for ligand preparation")
-        mol = Chem.MolFromMol2File(ligand_mol2_name, sanitize=False)
+    if problem and mol2_file_path.exists():
+        print("using mol2 file for ligand preparation")
+        mol = Chem.MolFromMol2File(mol2_file, sanitize=False)
         try:
             Chem.SanitizeMol(mol)
             mol = Chem.RemoveHs(mol)
@@ -111,13 +117,17 @@ def mol_and_smiles_from_file(sdf_file, mol2_file):
     return mol, smiles, problem
 
 
+sdf_input = [f.split('.sdf')[0] for f in glob.glob("*.sdf")]
+mol2_input = [f.split('.mol2')[0] for f in glob.glob("*.mol2")]
+all_input = set(sdf_input + mol2_input)
+
 warnings = []
 no_uncharge = []
 no_protonation = []
 no_embedding = []
 preparation_failed = []
 
-for ref in ref_sdf_files:
+for ref in all_input:
     print("now processing: " + ref)
 
     rdBase.LogToPythonStderr()
@@ -125,19 +135,18 @@ for ref in ref_sdf_files:
     sio = sys.stderr = StringIO()
 
     if naming == "default":
-        ligand = ref.split("__")[1].split('.sdf')[0].split("_")[0]
+        ligand = ref.split("__")[1].split("_")[0]
         ligand_sdf_name = ligand + ".sdf"
         ligand_preped = ligand + "_preped.sdf"
-        ligand_sdf_resnum_name = ref.split("__")[1]
-        ligand_full_name = ref.split(".sdf")[0]
-        ligand_mol2_name = ligand_full_name + ".mol2"
+        ligand_sdf_resnum_name = ref.split("__")[1] + ".sdf"
+        ligand_ref_sdf_name = ref + ".sdf"
+        ligand_mol2_name = ref + ".mol2"
 
-        sdf_file = Path() / f"{ligand_preped}"
-        resnum_sdf_file = Path() / f"{ligand_sdf_resnum_name.split('.sdf')[0]}_preped.sdf"
-        mol2_file = Path() / f"{ligand_mol2_name}"
+        preped_sdf_file = Path() / f"{ligand_preped}"
+        resnum_preped_sdf_file = Path() / f"{ligand_sdf_resnum_name.split('.sdf')[0]}_preped.sdf"
 
-        if not sdf_file.exists():
-            mol, smiles, problem = mol_and_smiles_from_file(ref, mol2_file)
+        if not preped_sdf_file.exists():
+            _, smiles, problem = mol_and_smiles_from_file(ligand_ref_sdf_name, ligand_mol2_name)
 
             if not problem:
                 mol = Chem.MolFromSmiles(smiles)
@@ -173,7 +182,7 @@ for ref in ref_sdf_files:
                     print("error: " + str(e))
 
                 if ligand_sdf_resnum_name != ligand_sdf_name:
-                    shutil.copy(sdf_file, resnum_sdf_file)
+                    shutil.copy(preped_sdf_file, resnum_preped_sdf_file)
                 print("ligand preparation done")
             else:
                 print(ref + " ligand preparation failed")
@@ -181,19 +190,18 @@ for ref in ref_sdf_files:
         else:
             print("sdf file already exists")
             if ligand_sdf_resnum_name != ligand_sdf_name:
-                shutil.copy(sdf_file, resnum_sdf_file)
+                shutil.copy(preped_sdf_file, resnum_preped_sdf_file)
 
     else:
-        ligand = ref.split(".sdf")[0]
-        ligand_sdf_name = ref
+        ligand = ref
+        ligand_sdf_name = ref + ".sdf"
         ligand_preped = ligand + "_preped.sdf"
-        ligand_mol2_name = ligand + ".mol2"
+        ligand_mol2_name = ref + ".mol2"
 
-        sdf_file = Path() / f"{ligand_preped}"
-        mol2_file = Path() / f"{ligand_mol2_name}"
+        preped_sdf_file = Path() / f"{ligand_preped}"
 
-        if not sdf_file.exists():
-            mol, smiles, problem = mol_and_smiles_from_file(ref, mol2_file)
+        if not preped_sdf_file.exists():
+            _, smiles, problem = mol_and_smiles_from_file(ligand_sdf_name, ligand_mol2_name)
 
             if not problem:
                 mol = Chem.MolFromSmiles(smiles)
