@@ -608,8 +608,8 @@ workflow {
             edm_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
                           .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand ] }
                           .transpose()
-                          .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_edmdock_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] ]}
-                          .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
+                          .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_${item[5]}_edmdock_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] + "\n" ]}
+                          .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-5], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
                           .set{ edm_scores_for_coordinates }    // receptor, pocket, complex, edmdock_score_csv
 
             edm_scores_for_coordinates.combine(predicted_coordinates, by: [0, 1])        // receptor, pocket, complex, edmdock_score_csv, x, y, z

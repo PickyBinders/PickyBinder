@@ -30,8 +30,13 @@ def combine_scores(ost_json, tool):
             pocket = '-'
             rank = name.split('_rank')[1].split('_')[0]
         elif tool == 'edmdock':
-            pocket = name.split('_')[-2]
-            rank = '-'
+            substring_minimized = 'docked_min'
+            if substring_minimized in name:
+                pocket = name.split('_')[-3]
+                rank = '1'
+            else:
+                pocket = name.split('_')[-2]
+                rank = '2'
         else:
             pocket = '-'
             rank = '-'
