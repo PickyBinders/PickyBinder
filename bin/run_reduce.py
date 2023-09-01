@@ -20,9 +20,7 @@ def run_reduce(singularity_img, het_dict_file, input_pdb, output_path):
     raised.
     """
     # Add Hydrogens
-    #hydrogenate_cmd = ["singularity", "exec", "-B", "/scicore/home/schwede", "-B", "/scratch", "-B", "/home", singularity_img, "reduce",
-    #sing_dir = os.path.dirname(singularity_img)
-    hydrogenate_cmd = ["singularity", "exec", "-B", "/scicore/home/schwede", "-B", "/scratch", "-B", "/home", singularity_img, "reduce",
+    hydrogenate_cmd = ["singularity", "exec", singularity_img, "reduce",
                        "-FLIP",
                        "-DB", het_dict_file,
                        input_pdb
