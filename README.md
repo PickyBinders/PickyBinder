@@ -28,17 +28,16 @@ the containers (Singularity) and the resource management for the executor (SLURM
 are defined in the **nextflow.config** file. The locations of the required tools, Singularity images 
 and default values are specified in the **params.config** file. 
 
-Each process of the pipeline has its own working directory that is located in 
+Each task of the workflow has its own working directory that is located in 
 the **work** folder, where all the output and log files for each process are stored. 
 The designated output files are automatically copied to the results' folder, and therefore it is 
 useful to **remove the work directory** if the pipeline finished satisfactorily.  
 
-Upon successful completion the **report.html** is produced which 
-gives information about each process including the used resources. 
+During the workflow the **trace_report.csv** keeps track of all the finished tasks including the used resources 
+and upon successful completion a **report.html** is produced which gives additional graphical information 
+about each process.
 
 ## Dependencies
-
-
 
 ### Nextflow
 
@@ -141,15 +140,6 @@ or to define a profile for another executor in the nextflow.config file
 (check [Nextflow documentation](https://www.nextflow.io/docs/latest/executor.html) for help).
 
 
-### Resume a run
-
-The pipeline can be resumed by adding ```-resume``` to the "nextflow run" command. This will restart the last run in the
-current working directory and rerun not successfully completed tasks as well as tasks where input files or scripts have 
-been changed. You can also add additional options and all tasks that are affected by this option will be (re)run. 
-For example if the workflow has been run just for GNINA (--tools gnina) the workflow can be resumed with 
-```--tools gnina,vina``` to get also the predictions from Autodock Vina by only running tasks that have not been run
-before.
-
 
 Available options:
 
@@ -198,9 +188,22 @@ To change the paramaters of the individual tools provide a blank-space separated
 --diffdock_params           DiffDock parameters --> default: "--inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise"
 ```
 
+### Resume a run
+
+The pipeline can be resumed by adding ```-resume``` to the "nextflow run" command. This will restart the last run in the
+current working directory and rerun not successfully completed tasks as well as tasks where input files or scripts have 
+been changed. You can also add additional options and all tasks that are affected by this option will be (re)run. 
+For example if the workflow has been run just for GNINA (--tools gnina) the workflow can be resumed with 
+```--tools gnina,vina``` to get also the predictions from Autodock Vina by only running tasks that have not been run
+before.
+
 ## Outputs
 
 The **BiSyRMSD** and **lDDT-PLI** of all predicted poses as well as the score provided by the individual tools 
 can be found in the **all_scores_summary.csv** in the ```scores``` directory.
 
-All predicted ligand poses can be found in the ```predictions``` directory. 
+All predicted ligand poses can be found in the ```predictions``` directory.
+
+
+## Error handling
+
