@@ -67,26 +67,17 @@ process ost_scoring {
     do
         if [[ ${ref_receptor} == *.pdb ]]
         then
-            ost compare-ligand-structures \
-                --substructure-match \
-                -m ${model_receptor} \
-                -ml \${model} \
-                -r ${ref_receptor} \
-                -rl ${ref_ligand} \
+            ost compare-ligand-structures --substructure-match \
+                -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} \
                 -o \${model%.sdf}.json \
-                --lddt-pli \
-                --rmsd \
+                --lddt-pli --rmsd \
                 || continue
         elif [[ ${ref_receptor} == *.cif ]]
         then
-            ost compare-ligand-structures \
-                --substructure-match \
-                -m ${model_receptor} \
-                -ml \${model} \
-                -r ${ref_receptor} \
+            ost compare-ligand-structures --substructure-match \
+                -m ${model_receptor} -ml \${model} -r ${ref_receptor} \
                 -o \${model%.sdf}.json \
-                --lddt-pli \
-                --rmsd \
+                --lddt-pli --rmsd \
                 || continue
         fi
     done
@@ -109,7 +100,7 @@ process ost_score_summary {
     """
     if [[ ! -f $launchDir/scores/ligand_score_summary.csv ]]
     then
-        echo 'Tool,Complex,Pocket,Rank,lDDT-PLI,BiSyRMSD,Reference_Ligand,Box_Center_x,Box_Center_y,Box_Center_z' > score_summary.csv
+        echo 'Tool,Complex,Pocket,Rank,lDDT-PLI,lDDT-LP,BiSyRMSD,Reference_Ligand,Box_Center_x,Box_Center_y,Box_Center_z' > score_summary.csv
         grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
     else
         cp $launchDir/scores/ligand_score_summary.csv score_summary.csv
@@ -155,9 +146,9 @@ process combine_receptors_scores {
 
     for file in *.json
     do
-        lddt=\$(grep 'lddt' \$file | cut -d' ' -f6)
-        rmsd=\$(grep 'rmsd' \$file | cut -d' ' -f6)
-        qs_global=\$(grep 'qs_global' \$file | cut -d' ' -f6)
+        lddt=\$(grep '"lddt"' \$file | cut -d' ' -f6)
+        rmsd=\$(grep '"rmsd"' \$file | cut -d' ' -f6)
+        qs_global=\$(grep '"qs_global"' \$file | cut -d' ' -f6)
         echo \${file%.json}, \$lddt \$rmsd \$qs_global >> receptor_score_summary.csv
     done
     """

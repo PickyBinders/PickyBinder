@@ -43,15 +43,17 @@ def combine_scores(ost_json, tool):
 
         if data['lddt_pli'] == {}:
             lddt_pli = '-'
+            lddt_lp = '-'
             rmsd = '-'
             ref_ligand = ''
         else:
             lddt_pli = data['lddt_pli'][name]['lddt_pli']
+            lddt_lp = data['lddt_pli'][name]['lddt_lp']
             rmsd = data['lddt_pli'][name]['rmsd']
             ref_ligand = data['lddt_pli'][name]['reference_ligand']
 
-        list_row = pd.DataFrame([[tool, complex_name, pocket, rank, lddt_pli, rmsd, ref_ligand]],
-                                columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lDDT-PLI', 'BiSyRMSD',
+        list_row = pd.DataFrame([[tool, complex_name, pocket, rank, lddt_pli, lddt_lp, rmsd, ref_ligand]],
+                                columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lDDT-PLI', 'lDDT-LP', 'BiSyRMSD',
                                          'Reference_Ligand'])
 
         return list_row
@@ -60,7 +62,8 @@ def combine_scores(ost_json, tool):
 
 
 files = [f for f in glob.glob("*.json")]
-score_df = pd.DataFrame(columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lDDT-PLI', 'BiSyRMSD', 'Reference_Ligand'])
+score_df = pd.DataFrame(columns=['Tool', 'Complex', 'Pocket', 'Rank', 'lDDT-PLI', 'lDDT-LP', 'BiSyRMSD',
+                                 'Reference_Ligand'])
 
 for file in files:
     score_df = pd.concat([score_df, combine_scores(file, tool_name)])
