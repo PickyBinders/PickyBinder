@@ -466,14 +466,20 @@ workflow {
 
     // coordinates from p2rank predictions
     binding_pockets.pockets.map{ receptor, csv -> [ receptor, csv.splitCsv(header:true, strip:true) ] }
-                           .map{ receptor, row -> [ receptor, row.name, row.center_x, row.center_y, row.center_z ] }
-                           .transpose()
-                           .set{predicted_coordinates}  // receptor, pocket, x, y, z
+                           .branch{
+                                p2rank_ok: it[1] != []
+                                other: true
+                           }
+                           .set{ p2rank_success }
+    p2rank_success.p2rank_ok.map{ receptor, row -> [ receptor, row.name, row.center_x, row.center_y, row.center_z ] }
+                            .transpose()
+                            .set{predicted_coordinates}  // receptor, pocket, x, y, z
 
     predicted_coordinates.map { it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
                          .collectFile(name: 'p2rank_summary.csv', newLine: true)
                          .set { p2rank_summary }
 
+    p2rank_success.other.collectFile(storeDir: 'preprocessing/p2rank') {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
 
     // scoring the modelled receptors
     if (params.scoring_receptors == "yes") {
@@ -491,9 +497,9 @@ workflow {
             tb_scores = tb_ost(tb_scoring_input, Channel.value( 'tankbind' ))
 
             tb_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
-                             .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand ] }
+                             .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.'lDDT-LP', row.BiSyRMSD, row.Reference_Ligand ] }
                              .transpose()
-                             .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_tankbind_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] ]}
+                             .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_tankbind_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] ]}
                              .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-4], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
                              .set{ tb_scores_for_coordinates }    // receptor, pocket, complex, tb_score_csv
 
@@ -503,8 +509,8 @@ workflow {
                                    .combine(tb_scores_for_coordinates, by: [0, 1, 2])
                                    .map{ receptor, pocket, complex, x, y, z, csv -> [ receptor, pocket, complex, x, y, z, csv.splitCsv(strip:true)] }
                                    .transpose()
-                                   .map { [ it[0], it[1], it[2], it[6][0], it[6][1], it[6][2], it[6][3], it[6][4], it[6][5], it[6][6], it[3], it[4], it[5] ] }
-                                   .collectFile() { item -> [ "${item[2]}_${item[1]}_tankbind_score_summary.csv", item[3] + "," + item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] ] }
+                                   .map { [ it[0], it[1], it[2], it[6][0], it[6][1], it[6][2], it[6][3], it[6][4], it[6][5], it[6][6], it[6][7], it[3], it[4], it[5] ] }
+                                   .collectFile() { item -> [ "${item[2]}_${item[1]}_tankbind_score_summary.csv", item[3] + "," + item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] ] }
                                    .collect()
                                    .set{ tb_scores_for_summary }
         }
@@ -537,9 +543,9 @@ workflow {
             vina_scores_for_coordinates_p2rank.concat(vina_scores_for_coordinates_defined)
                         .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                         .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
-                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
+                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.'lDDT-LP', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
                         .transpose()
-                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + "," + item[14] + '\n'] }
                         .collect()
                         .set{ vina_scores_for_summary}
         }
@@ -563,9 +569,9 @@ workflow {
             smina_scores_for_coordinates_p2rank.concat(smina_scores_for_coordinates_defined)
                      .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                      .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
-                     .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
+                     .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.'lDDT-LP', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
                      .transpose()
-                     .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                     .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + "," + item[14] + '\n'] }
                      .collect()
                      .set{ smina_scores_for_summary}
     }
@@ -589,9 +595,9 @@ workflow {
             gnina_scores_for_coordinates_p2rank.concat(gnina_scores_for_coordinates_defined)
                      .map{ [ it[3].simpleName, it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                      .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(header:true, strip:true), x, y, z] }
-                     .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
+                     .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.'lDDT-LP', row.BiSyRMSD, row.Reference_Ligand, x, y, z] }
                      .transpose()
-                     .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                     .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + "," + item[14] + '\n'] }
                      .collect()
                      .set{ gnina_scores_for_summary}
         }
@@ -606,9 +612,9 @@ workflow {
             //edm_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ edmdock_scores_for_summary }
 
             edm_scores.summary.map{ complex, receptor, csv -> [ complex, receptor, csv.splitCsv(header:true, strip:true) ] }
-                          .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.BiSyRMSD, row.Reference_Ligand ] }
+                          .map{ complex, receptor, row -> [ complex, receptor, row.Tool, row.Complex, row.Pocket, row.Rank, row.'lDDT-PLI', row.'lDDT-LP', row.BiSyRMSD, row.Reference_Ligand ] }
                           .transpose()
-                          .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_${item[5]}_edmdock_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] + "\n" ]}
+                          .collectFile() {item -> [ "${item[1]}____${item[0]}_${item[4]}_${item[5]}_edmdock_score_summary.csv", item[2] + "," + item[3] + "," + item[4] + "," + item[5] +  "," + item[6] + "," + item[7] + "," + item[8] + "," + item[9] + "\n" ]}
                           .map{ [ it.simpleName.split('____')[0], it.simpleName.split('_')[-5], it.simpleName.split('_pocket')[0].split('____')[1], it ] }
                           .set{ edm_scores_for_coordinates }    // receptor, pocket, complex, edmdock_score_csv
 
@@ -619,11 +625,11 @@ workflow {
                                       .set{ edm_scores_for_coordinates_defined }
 
             edm_scores_for_coordinates_p2rank.concat(edm_scores_for_coordinates_defined)
-                        .map{ [ it[3].simpleName.split('____')[1], it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
+                        .map{ [ it[3].simpleName.split('____')[1], it[0], it[1], it[2], it[3], it[4], it[5], it[6], it[7] ] }
                         .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(strip:true), x, y, z] }
-                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row[0][0], row[0][1], row[0][2], row[0][3], row[0][4], row[0][5], row[0][6], x, y, z ] }
+                        .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row[0][0], row[0][1], row[0][2], row[0][3], row[0][4], row[0][5], row[0][6], row[0][7], x, y, z ] }
                         .transpose()
-                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + '\n'] }
+                        .collectFile() {item -> ["${item[0]}.csv", item[4] + "," + item[5] + "," + item[6] + "," + item[7] + "," + item[8] +  "," + item[9] + "," + item[10] + "," + item[11] + "," + item[12] + "," + item[13] + "," + item[14] + '\n'] }
                         .collect()
                         .set{ edmdock_scores_for_summary}
          }
