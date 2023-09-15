@@ -8,14 +8,6 @@ lDDT-PLI scores calculated with OpenStructure for each predicted ligand pose. Fo
 AutoDock family, the workflow conducts besides blind docking also ligand prediction either
 for all binding pockets identified by P2Rank or for a specific user-defined binding site.
 
-### Recent changes
-
-* Integration of EDMDock (includes updates of nextflow.config and params.config.in).
-* A score summary file for each individual tool. 
-individual tools.
-* Option to turn off ligand scoring
-* Option to change the parameters of the docking tools
-* Workflow report is set in nextflow.config and therefor removed from the nextflow command.
 
 ## Overview
 
@@ -39,15 +31,17 @@ about each process.
 
 ## Dependencies
 
+Download the PickyBinder GitHub repository and unzip reduce_wwPDB_het_dict.txt.gz file. 
+
 ### Nextflow
 
-The workflow has been tested using Nextflow version 20.10.0. up to 23.04.2. 
-Get Nextflow from https://www.nextflow.io/ . 
+The workflow has been built using Nextflow version 23.04.2. 
+Get Nextflow from https://www.nextflow.io/. 
 
 ### Protein-ligand prediction tools
 
-The PickyBinder workflow has the capability to execute **Autodock Vina**, **SMINA**, **GNINA**, **DiffDock**, **TANKBind**, and
-**EDMDock**. The selection of which tools to incorporate into the workflow can be made when initiating the pipeline. 
+The PickyBinder workflow has the capability to execute **Autodock Vina**, **SMINA**, **GNINA**, **DiffDock**, and **TANKBind**. 
+The selection of which tools to incorporate into the workflow can be made when initiating the pipeline. 
 To effectively operate each specific tool, it is necessary to have the following dependencies installed: 
 
 - **Autodock Vina**: Get the Autodock Vina v1.2.5 executable from https://github.com/ccsb-scripps/AutoDock-Vina/releases 
@@ -58,7 +52,6 @@ or make an own Conda environment for meeko (https://pypi.org/project/meeko/#2.-r
 - **GNINA**: Get the Singularity image for GNINA v1.0.3 (https://hub.docker.com/r/gnina/gnina/tags, tag: 1.0.3).
 - **DiffDock**: Create a Conda environment according to the setup guide at https://github.com/gcorso/DiffDock (commit 2c7d438).
 - **TANKBind**: Get Singularity image "tankbind_py38" (https://hub.docker.com/r/qizhipei/tankbind_py38, digest: 79a46540b547).
-- **EDMDock**: Get EDM-Dock dependencies from https://github.com/MatthewMasters/EDM-Dock and follow the instructions. 
 
 ### Other tools
 - **P2Rank**: Get P2Rank v2.4 executable from https://github.com/rdk/p2rank/releases .
@@ -167,7 +160,7 @@ All workflow options can either be defined in the params.config file or used on 
 
 --tools arg                 comma-separated list of the docking tools to run, default is to 
                             run all available tools:
-                            --> diffdock,tankbind,vina,smina,gnina,edmdock
+                            --> diffdock,tankbind,vina,smina,gnina
                             
 --scoring_receptors         Compares the receptor structure to the reference using OpenStructure: 
                                 no (default), yes (lDDT, RMSD, and QS-score)
@@ -199,11 +192,14 @@ before.
 
 ## Outputs
 
-The **BiSyRMSD** and **lDDT-PLI** of all predicted poses as well as the score provided by the individual tools 
-can be found in the **all_scores_summary.csv** in the ```scores``` directory.
+**lDDT-PLI**, **lDDT-LP**, and **BiSyRMSD** of all predicted poses computed using OpenStructure as well as the 
+scores provided by the individual tools can be found in the **summary files** in the ```scores``` directory.
 
 All predicted ligand poses can be found in the ```predictions``` directory.
 
 
-## Error handling
+## Failing tasks
 
+Each single task produces a log, an error, and a standard output file (.command.log, .command.err, .command.out), 
+which can be found in the work directory of the given task. To find the hash of the task check out the pipeline_trace
+file.
