@@ -235,7 +235,9 @@ workflow {
     */
 
     // predict binding pockets
-    binding_pockets = p2rank(pdb_Hs)
+    if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /tankbind/ || params.tools =~ /edmdock/) {
+        binding_pockets = p2rank(pdb_Hs)
+    }
 
     // define box parameters for vina-like tools
     wp_coordinates = Channel.empty()
@@ -420,16 +422,6 @@ workflow {
         // single sample version
         edmdock_out = edmdock_single(edm_dock_input, edmdock_tool.collect())
         edmdock_sdfs = edmdock_pdb_to_sdf_single(edmdock_out.map{ [ it[0], it[1], it[3] ] }, "predictions/edmdock/sdf_files")
-
-        // batch version
-        //edm_dock_input.map{ [it[4].name, it[5].name, it[6].name ] }
-        //              .collectFile() {item ->
-        //                    [ "edmdock_samples.csv", item[0] + "," + item[1] + "," + item[2] + "\n"]
-        //              }
-        //              .set{ edmdock_samples_file }
-
-        //edmdock_out = edmdock(edmdock_samples_file, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), boxes.flatten().filter{it =~ /\//}.collect(), edmdock_tool.collect())
-        //edmdock_sdfs = edmdock_pdb_to_sdf_batch(edmdock_out.pdbs, "predictions/edmdock/results")
     }
     else {
         edmdock_scores_for_summary = Channel.empty()
@@ -465,21 +457,23 @@ workflow {
     }
 
     // coordinates from p2rank predictions
-    binding_pockets.pockets.map{ receptor, csv -> [ receptor, csv.splitCsv(header:true, strip:true) ] }
-                           .branch{
-                                p2rank_ok: it[1] != []
-                                other: true
-                           }
-                           .set{ p2rank_success }
-    p2rank_success.p2rank_ok.map{ receptor, row -> [ receptor, row.name, row.center_x, row.center_y, row.center_z ] }
-                            .transpose()
-                            .set{predicted_coordinates}  // receptor, pocket, x, y, z
+    if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /tankbind/ || params.tools =~ /edmdock/) {
+        binding_pockets.pockets.map{ receptor, csv -> [ receptor, csv.splitCsv(header:true, strip:true) ] }
+                               .branch{
+                                    p2rank_ok: it[1] != []
+                                    other: true
+                               }
+                               .set{ p2rank_success }
+        p2rank_success.p2rank_ok.map{ receptor, row -> [ receptor, row.name, row.center_x, row.center_y, row.center_z ] }
+                                .transpose()
+                                .set{predicted_coordinates}  // receptor, pocket, x, y, z
 
-    predicted_coordinates.map { it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
-                         .collectFile(name: 'p2rank_summary.csv', newLine: true)
-                         .set { p2rank_summary }
+        predicted_coordinates.map { it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
+                             .collectFile(name: 'p2rank_summary.csv', newLine: true)
+                             .set { p2rank_summary }
 
-    p2rank_success.other.collectFile(storeDir: 'preprocessing/p2rank') {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
+        p2rank_success.other.collectFile(storeDir: 'preprocessing/p2rank') {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
+    }
 
     // scoring the modelled receptors
     if (params.scoring_receptors == "yes") {
