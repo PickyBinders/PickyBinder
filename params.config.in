@@ -8,6 +8,7 @@ params {
 
         naming                  = "default"     // default, other
         receptor_Hs             = "no"          // yes, no
+        p2rank_only             = "no"          // yes, no
         diffdock_mode           = "batch"       // batch, single
 
         tools                   = "diffdock,tankbind,vina,smina,gnina,edmdock"
