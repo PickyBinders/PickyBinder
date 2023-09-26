@@ -202,15 +202,8 @@ workflow {
     */
 
     // ligand preprocessing
-    if (params.ligand_prep == "sdf") {
-        //sdf_for_docking = ligand_preprocessing(ref_sdf_files.unique().collect(), mol_files.unique().collect().ifEmpty([]))
-        sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] })
-    }
-    else if (params.ligand_prep == "mol2") {
-        no_sdf_files = Channel.empty()
-        //sdf_for_docking = ligand_preprocessing(no_sdf_files.ifEmpty([]), mol_files.unique().collect())
-        sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[0], it[2] ] })
-    }
+    
+    sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] }.unique())
 
     ligand_preprocessing_log(sdf_for_docking.ligand_prep_log.collect())
 
@@ -619,7 +612,7 @@ workflow {
                                       .set{ edm_scores_for_coordinates_defined }
 
             edm_scores_for_coordinates_p2rank.concat(edm_scores_for_coordinates_defined)
-                        .map{ [ it[3].simpleName.split('____')[1], it[0], it[1], it[2], it[3], it[4], it[5], it[6], it[7] ] }
+                        .map{ [ it[3].simpleName.split('____')[1], it[0], it[1], it[2], it[3], it[4], it[5], it[6] ] }
                         .map{ file_name, receptor, pocket, complex, csv, x, y, z -> [ file_name, receptor, pocket, complex, csv.splitCsv(strip:true), x, y, z] }
                         .map{ file_name, receptor, pocket, complex, row, x, y, z -> [ file_name, receptor, pocket, complex, row[0][0], row[0][1], row[0][2], row[0][3], row[0][4], row[0][5], row[0][6], row[0][7], x, y, z ] }
                         .transpose()
