@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/predictions/diffdock"
 
 process diffdock {
     publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_*.log"
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "protein_ligand_withHeader.csv"
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "protein_ligand_csv_*.csv"
     publishDir "$params.OUTPUT", mode: 'copy', pattern: "diffdock_predictions/**"
     conda "${params.diffdock_conda}"
 
@@ -18,14 +18,22 @@ process diffdock {
     path (diffd_tool)
 
     output:
-    path ("diffdock_predictions/**"), emit: predictions
+    path ("diffdock_predictions/**"), optional: true, emit: predictions
     path ("diffdock_*.log")
-    path ("protein_ligand_withHeader.csv")
+    path ("protein_ligand_csv_*.csv")
 
     script:
     """
+    DIR="$launchDir/predictions/diffdock/diffdock_predictions"
+    if [ -d "\$DIR" ]; then
+        ls \$DIR > done.txt
+        awk -F, '(NR==FNR){a[\$1];next}!(\$1 in a)' done.txt ${protein_ligand_csv} > complexes_to_redo.csv
+    else
+        cp ${protein_ligand_csv} complexes_to_redo.csv
+    fi
+
     echo 'complex_name,protein_path,ligand_description,protein_sequence' > protein_ligand_withHeader.csv
-    cat ${protein_ligand_csv} >> protein_ligand_withHeader.csv
+    cat complexes_to_redo.csv >> protein_ligand_withHeader.csv
 
     python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
        ${params.diffdock_params}
@@ -43,6 +51,7 @@ process diffdock {
     
     time_date=\$(date +"%y-%m-%d-%T")
     ln -s .command.log diffdock_\${time_date}.log
+    mv protein_ligand_withHeader.csv protein_ligand_csv_\${time_date}.csv
     """
 }
 

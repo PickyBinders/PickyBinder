@@ -217,7 +217,6 @@ workflow {
     if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /tankbind/ || params.tools =~ /edmdock/ || params.p2rank_only == "yes") {
         binding_pockets = p2rank(pdb_Hs)
     }
-    println(params.p2rank_only)
 
     if (params.p2rank_only != "yes")  {
         /*
@@ -298,16 +297,21 @@ workflow {
                 identifiers.combine(pdb_Hs, by: 0)
                            .combine(ligand_tuple.map{ [it[1], it[0]]}, by: 1)
                            .map{ [it[2], it[3].name.toString(), it[4].name.toString()] }
+
                            .collectFile() {item ->
                                 [ "protein_ligand.csv", item[0] + "," + item[1] + "," + item[2] + ",\n"]
                            }
                            .set{ diffd_csv }
 
                 diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
-                diffdock_predictions.predictions.flatten()
-                                    .filter{ it =~ /confidence/ }
-                                    .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
-                                    .set{ for_dd_tool_scores }
+                //diffdock_predictions.predictions.flatten()
+                //                    .filter{ it =~ /confidence/ }
+                Channel.fromPath("$launchDir/predictions/diffdock/diffdock_predictions/*/*confidence*").ifEmpty([])
+                       .concat(diffdock_predictions.predictions.flatten().ifEmpty([]))
+                       .filter{ it =~ /confidence/ }
+                       .unique()
+                       .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                       .set{ for_dd_tool_scores }
             }
             else if (params.diffdock_mode == "single") {
 
