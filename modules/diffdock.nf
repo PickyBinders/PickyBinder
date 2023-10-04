@@ -19,11 +19,12 @@ process diffdock {
 
     output:
     path ("diffdock_predictions/**"), optional: true, emit: predictions
-    path ("diffdock_*.log")
-    path ("protein_ligand_csv_*.csv")
+    path ("diffdock_*.log"), emit: log
+    path ("protein_ligand_csv_*.csv"), optional: true
 
     script:
     """
+    time_date=\$(date +"%y-%m-%d-%T")
     DIR="$launchDir/predictions/diffdock/diffdock_predictions"
     if [ -d "\$DIR" ]; then
         ls \$DIR > done.txt
@@ -32,26 +33,28 @@ process diffdock {
         cp ${protein_ligand_csv} complexes_to_redo.csv
     fi
 
-    echo 'complex_name,protein_path,ligand_description,protein_sequence' > protein_ligand_withHeader.csv
-    cat complexes_to_redo.csv >> protein_ligand_withHeader.csv
+    if [[ -s complexes_to_redo.csv ]]; then
+        echo 'complex_name,protein_path,ligand_description,protein_sequence' > protein_ligand_withHeader.csv
+        cat complexes_to_redo.csv >> protein_ligand_withHeader.csv
 
-    python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
-       ${params.diffdock_params}
+        python -m inference --protein_ligand_csv protein_ligand_withHeader.csv --out_dir diffdock_predictions \
+            ${params.diffdock_params}
 
-    for dir in diffdock_predictions/*;
-    do
-        if [ "\$(ls -A \$dir)" ]
-        then
-            for file in \${dir}/*
-            do
-                mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file)
-            done
-        fi
-    done
-    
-    time_date=\$(date +"%y-%m-%d-%T")
+        for dir in diffdock_predictions/*;
+        do
+            if [ "\$(ls -A \$dir)" ]; then
+                for file in \${dir}/*
+                do
+                    mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file)
+                 done
+             fi
+        done
+        mv protein_ligand_withHeader.csv protein_ligand_csv_\${time_date}.csv
+    else
+        echo "There are no complexes to dock"
+    fi
+
     ln -s .command.log diffdock_\${time_date}.log
-    mv protein_ligand_withHeader.csv protein_ligand_csv_\${time_date}.csv
     """
 }
 
