@@ -60,10 +60,12 @@ process ligand_preprocessing_log {
     path (all_log_files)
 
     output:
-    path ("ligand_preprocessing.log")
+    path ("ligand_preprocessing_*.log")
 
     script:
     """
+    time_date=\$(date +"%y-%m-%d-%T")
+
     echo -e "**************\nLigand preparation failed:" > log.txt
     grep -h -A1 'Ligand preparation failed:' *_ligand_preprocessing.log --no-group-separator | grep -v 'Ligand preparation failed:' | tr -s '\n' >> log.txt
     echo -e "\n**************\nUncharging failed:" >> log.txt
@@ -75,6 +77,6 @@ process ligand_preprocessing_log {
     echo -e "\n**************\nWarnings:" >> log.txt
     grep -h -A1 'Warnings:' *_ligand_preprocessing.log --no-group-separator | grep -v 'Warnings:' | tr -s '\n' >> log.txt
     echo -e "\n" >> log.txt
-    mv log.txt ligand_preprocessing.log
+    mv log.txt ligand_preprocessing_\${time_date}.log
     """
 }

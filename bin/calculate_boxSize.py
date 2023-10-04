@@ -43,6 +43,14 @@ try:
     with open(boxSize_file, 'w+') as f:
         f.write(str(size))
 except Exception as e:
+    print(ligand + ':')
+    print('Box size could not be determined because of: ')
     print(e)
+    print('The box size is set to 40Å for ' + ligand + '.')
 
+    size = 40
 
+    boxSize_file = Path() / f"{ligand}_boxSize.txt"
+
+    with open(boxSize_file, 'w+') as f:
+        f.write(str(size))

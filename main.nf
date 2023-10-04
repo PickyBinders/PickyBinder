@@ -189,6 +189,7 @@ include { pdb_to_sdf_batch as edmdock_pdb_to_sdf_batch; pdb_to_sdf_single as edm
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
+include { catch_ignored_tasks; catch_diffdock_problems; no_box_size; error_and_problems_summary } from "./modules/catch_failed_tasks"
 
 
 /*
@@ -234,7 +235,7 @@ workflow {
             sdf_for_docking = ligand_preprocessing_single(all_input_defined.map{ [ it[1].simpleName, it[0], it[2] ] })
         }
 
-        ligand_preprocessing_log(sdf_for_docking.ligand_prep_log.collect())
+        ligand_prep_log = ligand_preprocessing_log(sdf_for_docking.ligand_prep_log.collect())
 
         sdf_for_docking.sdf_files.flatten()
                                  .map{ [it.simpleName.toString().split("_preped")[0], it] }
@@ -248,6 +249,7 @@ workflow {
         wp_coordinates = Channel.empty()
         if (params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /edmdock/) {
             box_size = calculate_boxSize(ligand_tuple)
+            box_size_failed = no_box_size(box_size.log.collect())
 
             if (params.BS) {
                 // boxes without defined BS
@@ -284,6 +286,9 @@ workflow {
                 boxes_all.center_coordinates.set{ wp_coordinates }
             }
         }
+        else {
+            box_size_failed = Channel.empty()
+        }
 
 
         /*
@@ -304,8 +309,8 @@ workflow {
                            .set{ diffd_csv }
 
                 diffdock_predictions = diffdock(diffd_csv, pdb_Hs.flatten().filter{it =~ /\//}.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect())
-                //diffdock_predictions.predictions.flatten()
-                //                    .filter{ it =~ /confidence/ }
+                dd_problems = catch_diffdock_problems(diffdock_predictions.log)
+
                 Channel.fromPath("$launchDir/predictions/diffdock/diffdock_predictions/*/*confidence*").ifEmpty([])
                        .concat(diffdock_predictions.predictions.flatten().ifEmpty([]))
                        .filter{ it =~ /confidence/ }
@@ -324,6 +329,11 @@ workflow {
                                     .filter{ it =~ /confidence/ }
                                     .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
                                     .set{ for_dd_tool_scores }
+
+                dd_problems = Channel.empty()
+            }
+            else {
+                dd_problems = Channel.empty()
             }
         }
         else {
@@ -483,6 +493,10 @@ workflow {
                                  .set { p2rank_summary }
 
             p2rank_success.other.collectFile(storeDir: 'preprocessing/p2rank') {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
+                                .set{ p2rank_no_pocket }
+        }
+        else {
+            p2rank_no_pocket = Channel.empty()
         }
 
         // scoring the modelled receptors
@@ -672,4 +686,11 @@ workflow {
             all_scores = combine_all_scores(all_scores_input.for_linking.collect())
         }
     }
+
+    /*
+    * error reports
+    */
+
+    ignored_tasks = catch_ignored_tasks(all_scores.ready)
+    error_and_problems_summary(ignored_tasks.concat(ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems).toList())
 }

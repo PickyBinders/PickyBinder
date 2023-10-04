@@ -13,6 +13,7 @@ process combine_all_scores {
 
     output:
     path ("*_summary.csv"), optional: true
+    val true, emit: ready
 
     script:
     """

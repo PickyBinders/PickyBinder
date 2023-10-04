@@ -15,7 +15,7 @@ process calculate_boxSize {
 
     output:
     tuple path ("${ligand}_boxSize.txt"), val (ligand), optional: true, emit: size
-    path ("${ligand}_log.txt"), optional: true
+    path ("${ligand}_log.txt"), optional: true, emit: log
 
     script:
     """
