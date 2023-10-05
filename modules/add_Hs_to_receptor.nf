@@ -10,10 +10,10 @@ process add_Hs_to_receptor {
     tag { receptor }
 
     input:
-    tuple val (receptor), path (pdb_file)
+    tuple val (receptor), path (pdb_file), val (alphafold)
 
     output:
-    tuple val (receptor), path ("*_Hs.pdb"), emit: pdb_Hs
+    tuple val (receptor), path ("*_Hs.pdb"), val (alphafold), emit: pdb_Hs
 
     script:
     """

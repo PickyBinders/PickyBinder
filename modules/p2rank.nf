@@ -9,7 +9,7 @@ process p2rank {
     tag { receptor }
 
     input:
-    tuple val (receptor), path (pdb_Hs)
+    tuple val (receptor), path (pdb_Hs), val (alphafold)
 
     output:
     tuple val (receptor), path ("*_predictions.csv"), emit: pockets
@@ -22,7 +22,7 @@ process p2rank {
     """
     ${params.load_java}
 
-    if test "${params.alphafold}" = "yes"
+    if test "${alphafold}" = "yes"
     then
         ${params.p2rank_tool}/prank predict -f ${pdb_Hs} -o ./ -c alphafold
     else
