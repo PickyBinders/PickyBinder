@@ -333,8 +333,10 @@ workflow {
                        .concat( diffdock_predictions.predictions.flatten().ifEmpty( [] ))
                        .filter{ it =~ /confidence/ }
                        .unique()
-                       .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
-                       .set{ for_dd_tool_scores }
+                       .set{ all_dd_predictions }
+
+                all_dd_predictions.collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                                  .set{ for_dd_tool_scores }
             }
             else if ( params.diffdock_mode == "single" ) {
 
@@ -553,7 +555,7 @@ workflow {
 
             // diffdock
             if ( params.tools =~ /diffdock/ ) {
-                scoring_ref.combine( diffdock_predictions.predictions.flatten().filter{ it =~ /confidence/ }.map{ [ it.toString().split('/')[-2], it ] }.groupTuple(), by: 0 )
+                scoring_ref.combine( all_dd_predictions.map{ [ it.toString().split('/')[-2], it ] }.groupTuple(), by: 0 )
                            .set { dd_scoring_input }
                 dd_scores = dd_ost( dd_scoring_input, Channel.value( 'diffdock' ) )
                 dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
@@ -713,4 +715,4 @@ workflow {
 
     ignored_tasks = catch_ignored_tasks( all_scores.ready )
     error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList() )
-} 
+}
