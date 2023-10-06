@@ -49,6 +49,8 @@ if tankbind_files:
     )
     tb_summary = tb_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
                              'TANKBind-Affinity', 'lDDT-PLI', 'lDDT-LP', 'BiSyRMSD', 'Reference_Ligand']]
+    # remove empty columns
+    tb_summary = tb_summary.dropna(how='all', axis=1)
     tb_summary.to_csv('tankbind_summary.csv', index=False)
 
 # Diffdock
@@ -66,6 +68,9 @@ if os.path.exists(diffdock_file):
     dd_summary = pd.merge(dd_summary, diffdock_scores, how="outer", on=["Tool", "Complex", "Rank"])
     dd_summary = dd_summary[['Tool', 'Complex', 'Rank', 'DiffDock-Confidence', 'lDDT-PLI', 'lDDT-LP', 'BiSyRMSD',
                              'Reference_Ligand']]
+
+    # remove empty columns
+    dd_summary = dd_summary.dropna(how='all', axis=1)
     dd_summary.to_csv('diffdock_summary.csv', index=False)
 
 # Vina
@@ -82,6 +87,9 @@ if vina_sdfs:
     vina_summary = vina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
                                  'Vina-free_energy', 'Vina-intermolecular_energy', 'Vina-internal_energy', 'lDDT-PLI',
                                  'lDDT-LP', 'BiSyRMSD', 'Reference_Ligand']]
+
+    # remove empty columns
+    vina_summary = vina_summary.dropna(how='all', axis=1)
     vina_summary.to_csv('vina_summary.csv', index=False)
 
 # SMINA
@@ -96,6 +104,9 @@ if smina_sdfs:
     smina_summary = pd.merge(smina_summary, smina_scores, how="outer", on=["Tool", "Complex", "Pocket", "Rank"])
     smina_summary = smina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
                                    'SMINA-minimizedAffinity', 'lDDT-PLI', 'lDDT-LP', 'BiSyRMSD', 'Reference_Ligand']]
+
+    # remove empty columns
+    smina_summary = smina_summary.dropna(how='all', axis=1)
     smina_summary.to_csv('smina_summary.csv', index=False)
 
 # GNINA
@@ -111,4 +122,7 @@ if gnina_sdfs:
     gnina_summary = gnina_summary[['Tool', 'Complex', 'Pocket', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'Rank',
                                    'GNINA-minimizedAffinity', 'GNINA-CNNScore', 'GNINA-CNNAffinity', 'lDDT-PLI',
                                    'lDDT-LP', 'BiSyRMSD', 'Reference_Ligand']]
+
+    # remove empty columns
+    gnina_summary = gnina_summary.dropna(how='all', axis=1)
     gnina_summary.to_csv('gnina_summary.csv', index=False)
