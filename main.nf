@@ -192,7 +192,7 @@ Channel
 * include the modules
 */
 
-include { ligand_preprocessing; ligand_preprocessing_single; ligand_preprocessing_log } from "./modules/ligand_preprocessing"
+include { ligand_preprocessing_single; ligand_preprocessing_log } from "./modules/ligand_preprocessing"
 include { add_Hs_to_receptor; fix_pdb } from "./modules/add_Hs_to_receptor"
 include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
@@ -352,13 +352,11 @@ workflow {
 
                 dd_problems = Channel.empty()
             }
-            else {
-                dd_problems = Channel.empty()
-            }
         }
         else {
             dd_scores_for_summary = Channel.empty()
             for_dd_tool_scores = Channel.empty()
+            dd_problems = Channel.empty()
         }
 
 
