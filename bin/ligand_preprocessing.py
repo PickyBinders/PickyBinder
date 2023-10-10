@@ -18,8 +18,6 @@ from rdkit import rdBase
 from io import StringIO
 import csv
 
-naming = sys.argv[1]
-
 
 def uncharge(mol):
     pattern = Chem.MolFromSmarts("[+1!h0!$([*]~[-1,-2,-3,-4]),-1!$([*]~[+1,+2,+3,+4])]")
@@ -51,11 +49,14 @@ def run_rxn(reactant, smarts):
 
 def protonator(m):
     rxns = [
-        '[NX3;H2;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$(NCC[ND2]);!$(NC=N):1]>>[NH3+:1]',
+        '[NX3;H2;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$(NCC[ND2]);!$('
+        'NC=N):1]>>[NH3+:1]',
         # Primary aliphatic amines
-        '[NX3;H1;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$([N;R][C;R][O,S,P;R]);!$([N;R][C;R][C;R][O,S,P;R]);!$(NC[N+]);!$(NCC[N+]);!$(NC=N):1]>>[NH2+:1]',
+        '[NX3;H1;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$([N;R][C;R][O,S,'
+        'P;R]);!$([N;R][C;R][C;R][O,S,P;R]);!$(NC[N+]);!$(NCC[N+]);!$(NC=N):1]>>[NH2+:1]',
         # Secondary aliphatic amines
-        '[NX3;H0;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$([N;R][C;R][O,S,P;R]);!$([N;R][C;R][C;R][O,S,P;R]);!$(NC[N+]);!$(NCC[N+]);!$(NC=N):1]>>[NH+:1]',
+        '[NX3;H0;!$(NC=[O,S]);!$(Na);!$(*[N,S,O,P]);!$(NC=[N;H0]);!$(NCC(F)F);!$(NCC#[C,N]);!$([N;R][C;R][O,S,'
+        'P;R]);!$([N;R][C;R][C;R][O,S,P;R]);!$(NC[N+]);!$(NCC[N+]);!$(NC=N):1]>>[NH+:1]',
         # Tertiary aliphatic amines
         '[NX2;H0;!$(NC=[O,S]);!$(Na);!$(*=[N,S,O,P]);!$(*=[C;R][S;R]):1]>>[NH+:1]',  # sp2 N
         '[NX2;H1;!$(NC=[O,S]);!$(Na);!$(*=[N,S,O,P]);!$(*=[C;R][S;R]):1]>>[NH2+:1]',  # sp2 N
@@ -77,14 +78,67 @@ def protonator(m):
     return m
 
 
-def mol_and_smiles_from_file(sdf_file, mol2_file):
-    """
-    Convert a sdf or mol2 file to a RDKIT mol and further to a smiles string
-    """
-    sdf_file_path = Path() / f"{sdf_file}"
-    mol2_file_path = Path() / f"{mol2_file}"
-    if sdf_file_path.exists():
-        mol = Chem.MolFromMolFile(sdf_file, sanitize=False)
+def protonate_and_optimize(smiles):
+    problem = False
+    uncharge_failed = False
+    protonation_failed = False
+    embedding_failed = False
+
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+    except Exception as e:
+        print("Error: smiles could not be converted to molecule object")
+        print("error: " + str(e))
+        problem = True
+
+    if not problem:
+        try:
+            mol = uncharge(mol)
+        except Exception as e:
+            print("Error: cannot uncharge molecule")
+            print("error: " + str(e))
+            uncharge_failed = True
+
+        try:
+            mol = protonator(mol)
+            print("molecule protonated")
+        except Exception as e:
+            print("Error: cannot protonate molecule")
+            print("error: " + str(e))
+            protonation_failed = True
+
+        try:
+            mol = Chem.AddHs(mol)
+            AllChem.EmbedMolecule(mol)
+            AllChem.MMFFOptimizeMolecule(mol, confId=0)
+        except Exception as e:
+            print("Error: cannot embed molecule")
+            print("error: " + str(e))
+            embedding_failed = True
+
+        return mol, uncharge_failed, protonation_failed, embedding_failed
+    else:
+        mol = False
+        return mol, uncharge_failed, protonation_failed, embedding_failed
+
+
+def write_mol_to_sdf(mol, outfile_name):
+    try:
+        with Chem.SDWriter(outfile_name) as w:
+            w.write(mol)
+    except Exception as e:
+        print("Error: cannot write " + outfile_name)
+        print("error: " + str(e))
+
+
+def process_ligand_file(input_ligand):
+    preparation_failed = False
+    no_uncharge = False
+    no_protonation = False
+    no_embedding = False
+
+    if input_ligand.endswith(".sdf"):
+        mol = Chem.MolFromMolFile(input_ligand, sanitize=False)
         problem = False
 
         try:
@@ -92,209 +146,143 @@ def mol_and_smiles_from_file(sdf_file, mol2_file):
             mol = Chem.RemoveHs(mol)
             smiles = Chem.MolToSmiles(mol)
         except Exception as e:
-            print("ligand preparation using sdf file failed")
+            print("Ligand preparation using sdf file failed")
             print("error: " + str(e))
             smiles = str(e)
             problem = True
-    else:
-        print("no sdf file provided for ligand preparation")
-        problem = True
 
-    if problem and mol2_file_path.exists():
-        print("using mol2 file for ligand preparation")
-        mol = Chem.MolFromMol2File(mol2_file, sanitize=False)
+        if problem:
+            mol2_file_name = input_ligand.replace(".sdf", ".mol2")
+            mol2_file_path = Path() / f"{mol2_file_name}"
+
+            if mol2_file_path.exists():
+                print("Using mol2 file for ligand preparation")
+                mol = Chem.MolFromMol2File(mol2_file_name, sanitize=False)
+                try:
+                    Chem.SanitizeMol(mol)
+                    mol = Chem.RemoveHs(mol)
+                    smiles = Chem.MolToSmiles(mol)
+                    problem = False
+                except Exception as e:
+                    print("Ligand preparation using mol2 file failed")
+                    print("error: " + str(e))
+                    smiles = str(e)
+                    problem = True
+
+        if not problem:
+            final_mol, no_uncharge, no_protonation, no_embedding = protonate_and_optimize(smiles)
+            if final_mol is not False:
+                write_mol_to_sdf(final_mol, ligand_preped)
+            else:
+                print("Ligand preparation failed for " + input_ligand)
+                preparation_failed = True
+        else:
+            print("Ligand preparation failed for " + input_ligand)
+            preparation_failed = True
+
+    elif input_ligand.endswith(".mol2"):
+        mol = Chem.MolFromMol2File(input_ligand, sanitize=False)
+        problem = False
+
         try:
             Chem.SanitizeMol(mol)
             mol = Chem.RemoveHs(mol)
             smiles = Chem.MolToSmiles(mol)
-            problem = False
         except Exception as e:
-            print("ligand preparation using mol2 file failed")
+            print("Ligand preparation using mol2 file failed")
             print("error: " + str(e))
             smiles = str(e)
             problem = True
 
-    return mol, smiles, problem
+        if not problem:
+            final_mol, no_uncharge, no_protonation, no_embedding = protonate_and_optimize(smiles)
+            if final_mol is not False:
+                write_mol_to_sdf(final_mol, ligand_preped)
+            else:
+                print("Ligand preparation failed for " + input_ligand)
+                preparation_failed = True
+        else:
+            print("Ligand preparation failed for " + input_ligand)
+            preparation_failed = True
+
+    elif input_ligand.endswith(".smi"):
+        problem = False
+        try:
+            with open(input_ligand) as f:
+                line = f.readline()
+                smiles = line.strip()
+        except Exception as e:
+            print("Failed to read smiles file")
+            print("error: " + str(e))
+            problem = True
+
+        if not problem:
+            final_mol, no_uncharge, no_protonation, no_embedding = protonate_and_optimize(smiles)
+            if final_mol is not False:
+                write_mol_to_sdf(final_mol, ligand_preped)
+            else:
+                print("Ligand preparation failed for " + input_ligand)
+                preparation_failed = True
+
+        else:
+            print("Ligand preparation failed for " + input_ligand)
+            preparation_failed = True
+
+    else:
+        smiles = input_ligand
+        final_mol, no_uncharge, no_protonation, no_embedding = protonate_and_optimize(smiles)
+        if final_mol is not False:
+            write_mol_to_sdf(final_mol, ligand_preped)
+        else:
+            print("Ligand preparation failed for " + ligand_name)
+            preparation_failed = True
+
+    return preparation_failed, no_uncharge, no_protonation, no_embedding
 
 
-sdf_input = [f.split('.sdf')[0] for f in glob.glob("*.sdf")]
-mol2_input = [f.split('.mol2')[0] for f in glob.glob("*.mol2")]
-all_input = set(sdf_input + mol2_input)
-
-warnings = []
-no_uncharge = []
-no_protonation = []
-no_embedding = []
-preparation_failed = []
-
-for ref in all_input:
-    print("now processing: " + ref)
+if __name__ == "__main__":
+    input_ligand = sys.argv[1]
+    ligand_name = sys.argv[2]
+    ligand_preped = ligand_name + "_preped.sdf"
 
     rdBase.LogToPythonStderr()
     stderr = sys.stderr
     sio = sys.stderr = StringIO()
+    warnings = []
 
-    if naming == "default":
-        ligand = ref.split("__")[1].split("_")[0]
-        ligand_sdf_name = ligand + ".sdf"
-        ligand_preped = ligand + "_preped.sdf"
-        ligand_sdf_resnum_name = ref.split("__")[1] + ".sdf"
-        ligand_ref_sdf_name = ref + ".sdf"
-        ligand_mol2_name = ref + ".mol2"
+    try:
+        preparation_failed, no_uncharge, no_protonation, no_embedding = process_ligand_file(input_ligand)
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
 
-        preped_sdf_file = Path() / f"{ligand_preped}"
-        resnum_preped_sdf_file = Path() / f"{ligand_sdf_resnum_name.split('.sdf')[0]}_preped.sdf"
-
-        if not preped_sdf_file.exists():
-            _, smiles, problem = mol_and_smiles_from_file(ligand_ref_sdf_name, ligand_mol2_name)
-
-            if not problem:
-                mol = Chem.MolFromSmiles(smiles)
-                try:
-                    mol = uncharge(mol)
-                except Exception as e:
-                    print("Error: cannot uncharge molecule")
-                    print("error: " + str(e))
-                    no_uncharge.append(ligand)
-
-                try:
-                    mol = protonator(mol)
-                    print("molecule protonated")
-                except Exception as e:
-                    print("'Error: cannot protonate molecule'")
-                    print("error: " + str(e))
-                    no_protonation.append(ligand)
-
-                try:
-                    mol = Chem.AddHs(mol)
-                    AllChem.EmbedMolecule(mol)
-                    AllChem.MMFFOptimizeMolecule(mol, confId=0)
-                except Exception as e:
-                    print("Error: cannot embed molecule")
-                    print("error: " + str(e))
-                    no_embedding.append(ligand)
-
-                try:
-                    with Chem.SDWriter(ligand_preped) as w:
-                        w.write(mol)
-                except Exception as e:
-                    print("Error: cannot write ligand_preped.sdf file")
-                    print("error: " + str(e))
-
-                if ligand_sdf_resnum_name != ligand_sdf_name:
-                    shutil.copy(preped_sdf_file, resnum_preped_sdf_file)
-                print("ligand preparation done")
-            else:
-                print(ref + " ligand preparation failed")
-                preparation_failed.append(ligand)
-        else:
-            print("sdf file already exists")
-            if ligand_sdf_resnum_name != ligand_sdf_name:
-                shutil.copy(preped_sdf_file, resnum_preped_sdf_file)
-
-    else:
-        ligand = ref
-        ligand_sdf_name = ref + ".sdf"
-        ligand_preped = ligand + "_preped.sdf"
-        ligand_mol2_name = ref + ".mol2"
-
-        preped_sdf_file = Path() / f"{ligand_preped}"
-
-        if not preped_sdf_file.exists():
-            _, smiles, problem = mol_and_smiles_from_file(ligand_sdf_name, ligand_mol2_name)
-
-            if not problem:
-                mol = Chem.MolFromSmiles(smiles)
-                try:
-                    mol = uncharge(mol)
-                except Exception as e:
-                    print("Error: cannot uncharge molecule")
-                    print("error: " + str(e))
-                    no_uncharge.append(ligand)
-
-                try:
-                    mol = protonator(mol)
-                    print("molecule protonated")
-                except Exception as e:
-                    print("Error: cannot protonate molecule")
-                    print("error: " + str(e))
-                    no_protonation.append(ligand)
-
-                try:
-                    mol = Chem.AddHs(mol)
-                    AllChem.EmbedMolecule(mol)
-                    AllChem.MMFFOptimizeMolecule(mol, confId=0)
-                except Exception as e:
-                    print("Error: cannot embed molecule")
-                    print("error: " + str(e))
-                    no_embedding.append(ligand)
-                try:
-                    with Chem.SDWriter(ligand_preped) as w:
-                        w.write(mol)
-                except Exception as e:
-                    print("Error: cannot write ligand_preped.sdf file")
-                    print("error: " + str(e))
-
-                print("ligand preparation done")
-            else:
-                print(ref + " ligand preparation failed")
-                preparation_failed.append(ligand)
-        else:
-            print("sdf file already exists")
-
+    # print warnings
     if len(sio.getvalue()) != 0:
-        warnings.append([ligand, sio.getvalue().strip()])
+        warnings.append([input_ligand, sio.getvalue().strip()])
     print("warnings/errors:")
     print(sio.getvalue())
     sys.stderr = stderr
 
-# print ligand preparation overview to log file and save to problems file
-set_prep_failed = set(preparation_failed)
-set_no_uncharge = set(no_uncharge)
-set_no_protonation = set(no_protonation)
-set_no_embedding = set(no_embedding)
-
-preparation_failed = list(set_prep_failed)
-no_uncharge = list(set_no_uncharge)
-no_protonation = list(set_no_protonation)
-no_embedding = list(set_no_embedding)
-warnings.sort()
-
-preparation_failed.sort()
-no_uncharge.sort()
-no_protonation.sort()
-no_embedding.sort()
-warnings.sort()
-
-with open('problems_ligand_prep.txt', 'w+') as f:
-    f.write('Ligand preparation failed for: ')
-    f.writelines(','.join(preparation_failed))
-    f.write('\nUncharging failed for: ')
-    f.writelines(','.join(no_uncharge))
-    f.write('\nProtonation failed for: ')
-    f.writelines(','.join(no_protonation))
-    f.write('\nEmbedding failed for: ')
-    f.writelines(','.join(no_embedding))
-    f.write('\nWarnings: \n')
-    wr = csv.writer(f)
-    wr.writerows(warnings)
-
-print('\n')
-print('*********************************')
-print('*  Ligand preparation overview  *')
-print('*********************************')
-print('\n')
-print('Ligand preparation failed:')
-print(*preparation_failed, sep='\n')
-print('\n')
-print('Uncharging failed:')
-print(*no_uncharge, sep='\n')
-print('\n')
-print('Protonation failed:')
-print(*no_protonation, sep='\n')
-print('\n')
-print('Embedding failed:')
-print(*no_embedding, sep='\n')
-print('\n')
-print('Warnings:')
-print(*warnings, sep='\n')
+    # print ligand preparation overview to log file
+    print("\n")
+    print("*********************************")
+    print("*  Ligand preparation overview  *")
+    print("*********************************")
+    print("\n")
+    print("Ligand preparation failed:")
+    if preparation_failed:
+        print(input_ligand)
+    print("\n")
+    print("Uncharging failed:")
+    if no_uncharge:
+        print(input_ligand)
+    print("\n")
+    print("Protonation failed:")
+    if no_protonation:
+        print(input_ligand)
+    print("\n")
+    print("Embedding failed:")
+    if no_embedding:
+        print(input_ligand)
+    print("\n")
+    print("Warnings:")
+    print(*warnings, sep="\n")

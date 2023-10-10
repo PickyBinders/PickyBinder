@@ -13,7 +13,6 @@ PickyBinder  ~  version ${workflow.manifest.version}
 
 Input data             : ${params.data}
 Reference files        : ${params.ref_files}
-Input naming           : ${params.naming}
 AlphaFold models       : ${params.alphafold}
 Hydrated receptors     : ${params.receptor_Hs}
 Tools                  : ${params.tools}
@@ -41,13 +40,26 @@ else if ( params.data =~ /\.csv$/ ) {
     Channel
         .fromPath( params.data )
         .splitCsv( header:true )
-        .map{ row-> tuple( file(row.receptor_path), file(row.ligand_path_sdf), file(row.ligand_path_mol2),
+        .map{ row -> tuple( file(row.receptor_path), row.ligand_path_sdf, file(row.ligand_path_mol2),
                             file(row.reference_path), row.complex_name, row.BS, row.alphafold ) }
         .branch{
-            with_complex_name: it[4] != '' && it[4] != '-'
+            ligand_file: it[1].endsWith(".sdf") || it[1].endsWith(".smi") || it[1].endsWith(".mol2")
             other: true
         }
-        .set{ all_input }
+        .set{ ligand_type }
+
+    ligand_type.other.collectFile() { item -> [ "${item[4]}.smi", item[1] + '\n' ] }
+                     .set{ smi_files }
+
+    ligand_type.other.map{ [ it[4], it[0], it[1], it[2], it[3], it[5], it[6] ] } // complex, pdb_file, smiles_string, mol2_file, ref_file, BS, alphafold
+                     .combine( smi_files.map{ [ it.simpleName, it ] }, by: 0 ) // complex [0], pdb_file [1], smiles_string [2], mol2_file [3], ref_file [4], BS [5], alphafold [6], smi_file [7]
+                     .map{ [ it[1], it[7], it[3], it[4], it[0], it[5], it[6] ] } // pdb_file, smi_file, mol2_file, ref_file, complex, BS, alphafold
+                     .concat( ligand_type.ligand_file.map{ [ it[0], file( it[1] ), it[2], it[3], it[4], it[5], it[6] ] } )
+                     .branch{
+                        with_complex_name: it[4] != '' && it[4] != '-'
+                        other: true
+                     }
+                    .set{ all_input }
 
     // define a complex name where it is not given
     all_input.other.map{ [ it[0], it[1], it[2], it[3], it[0].simpleName + '__' + it[1].simpleName , it[5],  it[6] ] }
@@ -71,14 +83,8 @@ else if ( params.data =~ /\.csv$/ ) {
                         .set{ scoring_ref }
 
     // identifiers for receptor, ligand, complex names for each protein-ligand complex
-    if ( params.naming == "default" ) {
-        all_input_defined.map{ [ it[0].simpleName, it[1].simpleName.split("__")[1], it[4] ] }
-                         .set{ identifiers }
-    }
-    else {
-        all_input_defined.map{ [ it[0].simpleName, it[1].simpleName, it[4] ] }
-                         .set{ identifiers }
-    }
+    all_input_defined.map{ [ it[0].simpleName, it[1].simpleName, it[4] ] }
+                     .set{ identifiers }
 
     // get complexes with defined binding site
     all_input_defined.branch{
@@ -117,13 +123,8 @@ else if ( params.data.split(',').size() == 1 ) {
         .fromPath( "${params.ref_files}/*.{pdb,cif}" )
         .set { reference_files }
 
-    if ( params.naming == "default" ) {
-        ref_sdf_files.map { [ it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName ] }
-                     .set { identifiers }
-    }
-    else {
-        println( "Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!" )
-    }
+    ref_sdf_files.map { [ it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName ] }
+                 .set { identifiers }
 
     identifiers.combine( reference_files.map{ [ it.simpleName, it ] }, by: 0 )          // receptor, ligand, complex, ref_receptor_file
                .combine( pdb_files.map{ [it[0].simpleName, it[0] ] }, by: 0 )                // receptor, ligand, complex, ref_receptor_file, model_receptor_file
@@ -161,13 +162,8 @@ else if ( params.data.split(',').size() == 2 ) {
         .fromPath( "${params.ref_files}".split(',')[0] + "/*.{pdb,cif}" )
         .set { reference_files }
 
-    if ( params.naming == "default" ) {
-        ref_sdf_files.map { [ it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName ] }
-                     .set { identifiers }
-    }
-    else {
-        println( "Warning! Use the default naming scheme otherwise the receptor and the ligand might not be combined correctly!" )
-    }
+    ref_sdf_files.map { [ it.simpleName.split("__")[0], it.simpleName.split("__")[1], it.simpleName ] }
+                 .set { identifiers }
 
     identifiers.combine( reference_files.map{ [ it.simpleName, it ] }, by: 0 )          // receptor, ligand, complex, ref_receptor_file
                .combine( pdb_files.map{ [ it[0].simpleName, it[0] ] }, by: 0 )                // receptor, ligand, complex, ref_receptor_file, model_receptor_file

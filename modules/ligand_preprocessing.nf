@@ -19,7 +19,7 @@ process ligand_preprocessing_single {
 
     script:
     """
-    ligand_preprocessing.py ${params.naming}
+    ligand_preprocessing.py ${ref_sdf_file} ${ligand}
 
     ln -s .command.log ${ligand}_ligand_preprocessing.log
     """
@@ -27,7 +27,7 @@ process ligand_preprocessing_single {
 
 
 process ligand_preprocessing_log {
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "ligand_preprocessing.log"
+    publishDir "$params.OUTPUT", mode: 'copy', pattern: "ligand_preprocessing_*.log"
 
     input:
     path (all_log_files)
