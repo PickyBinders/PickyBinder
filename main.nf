@@ -13,9 +13,15 @@ PickyBinder  ~  version ${workflow.manifest.version}
 
 Input data             : ${params.data}
 Reference files        : ${params.ref_files}
-AlphaFold models       : ${params.alphafold}
-Hydrated receptors     : ${params.receptor_Hs}
+
 Tools                  : ${params.tools}
+Diffdock mode          : ${params.diffdock_mode}
+
+Ligand scoring         : ${params.scoring_ligands}
+Receptor scoring       : ${params.scoring_receptors}
+
+Hydrated receptors     : ${params.receptor_Hs}
+Autobox add            : ${params.autobox_add}
 
 =============================================
 
@@ -241,13 +247,7 @@ workflow {
         */
 
         // ligand preprocessing
-        if ( params.ligand_prep == "sdf" ) {
-            sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] } )
-        }
-        else if ( params.ligand_prep == "mol2" ) {
-            no_sdf_files = Channel.empty()
-            sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[0], it[2] ] } )
-        }
+        sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] } )
 
         ligand_prep_log = ligand_preprocessing_log( sdf_for_docking.ligand_prep_log.collect() )
 
@@ -672,7 +672,7 @@ workflow {
                                                    smina_scores_for_summary.ifEmpty( [] ).combine(
                                                    gnina_scores_for_summary.ifEmpty( [] ).combine(
                                                    edmdock_scores_for_summary.ifEmpty( [] )))))))
-        } // ligand scoring
+        }
         else {
             overall_ost_scores = Channel.empty()
         }
@@ -682,6 +682,7 @@ workflow {
         * combine tool scores with ost scores summary file
         */
 
+        // edmdock has no own score --> if only edmdock run, no tool score summary needed
         if ( params.tools != /edmdock/ ) {
             overall_ost_scores.ifEmpty( [] ).combine( for_tb_tool_scores.ifEmpty( [] )
                                             .combine( for_dd_tool_scores.ifEmpty( [] )
