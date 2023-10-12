@@ -462,6 +462,7 @@ workflow {
             // single sample version
             edmdock_out = edmdock_single( edm_dock_input, edmdock_tool.collect() )
             edmdock_sdfs = edmdock_pdb_to_sdf_single( edmdock_out.map{ [ it[0], it[1], it[3] ] }, "predictions/edmdock/sdf_files" )
+            for_edmdock_tool_scores = edmdock_sdfs.collect()
         }
         else {
             edmdock_scores_for_summary = Channel.empty()
@@ -695,7 +696,8 @@ workflow {
                                             .combine( for_dd_tool_scores.ifEmpty( [] )
                                             .combine( for_vina_tool_scores.ifEmpty( [] )
                                             .combine( for_smina_tool_scores.ifEmpty( [] )
-                                            .combine( for_gnina_tool_scores.ifEmpty( [] ))))))
+                                            .combine( for_gnina_tool_scores.ifEmpty( [] )
+                                            .combine( for_edmdock_tool_scores.ifEmpty( [] ) ))))))
                                             .flatten()
                                             .branch{
                                                 for_linking: it.name == 'ligand_score_summary.csv' || it.name == 'dd_file_names.txt'
@@ -704,6 +706,14 @@ workflow {
                                             .set{ all_scores_input }
 
             all_scores = combine_all_scores( all_scores_input.for_linking.collect() )
+        }
+        else {
+            ch_true = Channel.of( "True" )
+            ch_true.branch{
+                ready: it == "True"
+                other: true
+            }
+            set{ all_scores }
         }
 
     /*
