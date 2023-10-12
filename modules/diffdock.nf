@@ -25,6 +25,12 @@ process diffdock {
     script:
     """
     time_date=\$(date +"%y-%m-%d-%T")
+
+    if ls ${params.diffdock_tool}/.so3* 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.so3* .; fi
+    if ls ${params.diffdock_tool}/.p.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.p.npy .; fi
+    if ls ${params.diffdock_tool}/.score.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.score.npy .; fi
+
+    # check which protein-ligand pairs have been docked already and remove them from the protein_ligand.csv
     DIR="$launchDir/predictions/diffdock/diffdock_predictions"
     if [ -d "\$DIR" ]; then
         ls \$DIR > done.txt
@@ -46,7 +52,7 @@ process diffdock {
                 for file in \${dir}/*
                 do
                     mv \$file \$(dirname \$file)/\$(basename \$dir)_\$(basename \$file)
-                 done
+                done
              fi
         done
         mv protein_ligand_withHeader.csv protein_ligand_csv_\${time_date}.csv
@@ -60,7 +66,8 @@ process diffdock {
 
 
 process diffdock_single {
-    publishDir "$params.OUTPUT/diffdock_predictions", mode: 'copy'
+    publishDir "$params.OUTPUT/diffdock_predictions", mode: 'copy', pattern: "${complex}/*"
+    publishDir "$params.OUTPUT/diffdock_log_files", mode: 'copy', pattern: "diffdock_*.log"
     conda "${params.diffdock_conda}"
     tag { complex }
 
@@ -70,12 +77,25 @@ process diffdock_single {
 
     output:
     tuple val (complex), path ("${complex}/*"), emit: predictions
+    path ("diffdock_*.log"), emit: log
 
     script:
     """
+    if ls ${params.diffdock_tool}/.so3* 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.so3* .; fi
+    if ls ${params.diffdock_tool}/.p.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.p.npy .; fi
+    if ls ${params.diffdock_tool}/.score.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.score.npy .; fi
+
+
     python -m inference --complex_name ${complex} --protein_path ${pdb_file} --ligand ${sdf_file} --out_dir ./ \
        ${params.diffdock_params}
 
-    for file in ${complex}/*; do mv \$file ${complex}/${complex}_\$(basename \$file);done
+    if [ "\$(ls -A ${complex})" ]; then
+        for file in ${complex}/*
+        do
+            mv \$file ${complex}/${complex}_\$(basename \$file)
+        done
+    fi
+
+    ln -s .command.log diffdock_${complex}.log
     """
 }

@@ -46,8 +46,8 @@ else if ( params.data =~ /\.csv$/ ) {
     Channel
         .fromPath( params.data )
         .splitCsv( header:true )
-        .map{ row -> tuple( file(row.receptor_path), row.ligand_path_sdf, file(row.ligand_path_mol2),
-                            file(row.reference_path), row.complex_name, row.BS, row.alphafold ) }
+        .map{ row -> tuple( file(row.receptor), row.ligand, file(row.ligand_mol2),
+                            file(row.reference), row.complex_name, row.BS, row.alphafold ) }
         .branch{
             ligand_file: it[1].endsWith(".sdf") || it[1].endsWith(".smi") || it[1].endsWith(".mol2")
             other: true
@@ -343,8 +343,11 @@ workflow {
                 diffdock_predictions = diffdock_single( input_diffd_single, diffd_tool.collect() )
                 diffdock_predictions.predictions.flatten()
                                     .filter{ it =~ /confidence/ }
-                                    .collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
-                                    .set{ for_dd_tool_scores }
+                                    .set{ all_dd_predictions }
+
+                all_dd_predictions.collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                                  .set{ for_dd_tool_scores }
+
 
                 dd_problems = Channel.empty()
             }
