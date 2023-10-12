@@ -77,7 +77,7 @@ process error_and_problems_summary {
     publishDir "$params.OUTPUT", mode: 'copy'
 
     input:
-    path (error_problem_files)
+    tuple path (error_problem_files), val (p2rank_done)
 
     output:
     path ("errors_and_problems_summary_*.txt")
@@ -96,12 +96,15 @@ process error_and_problems_summary {
 
     if ls errors_box_size_*.txt 1> /dev/null 2>&1; then
         echo -e "\n\n*** Errors in box size calculation ***" >> errors_and_problems_summary_\${time_date}.txt
+        echo -e "For the following ligands the box size was set to 40Å:" >> errors_and_problems_summary_\${time_date}.txt
         cat errors_box_size_*.txt >> errors_and_problems_summary_\${time_date}.txt
     fi
 
-    if [[ -f p2rank_no_pockets_found.csv ]]; then
+    if [[ ${p2rank_done} == "done" ]]; then
         echo -e "\n\n*** No binding pocket detected by P2Rank ***" >> errors_and_problems_summary_\${time_date}.txt
-        cat p2rank_no_pockets_found.csv >> errors_and_problems_summary_\${time_date}.txt
+        if [[ -f p2rank_no_pockets_found.csv ]]; then
+            cat p2rank_no_pockets_found.csv >> errors_and_problems_summary_\${time_date}.txt
+        fi
     fi
 
     if ls diffdock_*_problems.txt 1> /dev/null 2>&1; then

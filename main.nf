@@ -238,6 +238,10 @@ workflow {
     // predict binding pockets
     if ( params.tools =~ /vina/ || params.tools =~ /smina/ || params.tools =~ /gnina/ || params.tools =~ /tankbind/ || params.tools =~ /edmdock/ || params.p2rank_only == "yes" ) {
         binding_pockets = p2rank( pdb_Hs )
+        params.P2RANK = "done"
+    }
+    else {
+        params.P2RANK = "no"
     }
 
     if ( params.p2rank_only != "yes" )  {
@@ -707,7 +711,7 @@ workflow {
     */
 
     ignored_tasks = catch_ignored_tasks( all_scores.ready )
-    error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList() )
+    error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList().map{ [ it, "${params.P2RANK}" ] } )
 
     }
     else{
@@ -722,7 +726,7 @@ workflow {
                             .set{ p2rank_no_pocket }
 
         ignored_tasks = catch_ignored_tasks( binding_pockets.pockets.collect().map{ [ [it], "True" ] }.map{ it[1] } )
-        error_and_problems_summary( ignored_tasks.concat( p2rank_no_pocket ).toList() )
+        error_and_problems_summary( ignored_tasks.concat( p2rank_no_pocket ).toList().map{ [ it, "${params.P2RANK}" ] } )
     }
 
 }
