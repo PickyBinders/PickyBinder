@@ -702,15 +702,27 @@ workflow {
             all_scores = combine_all_scores( all_scores_input.for_linking.collect() )
         }
 
-    }
-    else{
-        ligand_prep_log = Channel.empty()
-    }
-
     /*
     * error reports
     */
 
     ignored_tasks = catch_ignored_tasks( all_scores.ready )
     error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList() )
+
+    }
+    else{
+        binding_pockets.pockets.map{ receptor, csv -> [ receptor, csv.splitCsv(header:true, strip:true) ] }
+                               .branch{
+                                    p2rank_ok: it[1] != []
+                                    other: true
+                               }
+                               .set{ p2rank_success }
+
+        p2rank_success.other.collectFile( storeDir: 'preprocessing/p2rank' ) {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
+                            .set{ p2rank_no_pocket }
+
+        ignored_tasks = catch_ignored_tasks( binding_pockets.pockets.collect().map{ [ [it], "True" ] }.map{ it[1] } )
+        error_and_problems_summary( ignored_tasks.concat( p2rank_no_pocket ).toList() )
+    }
+
 }
