@@ -85,16 +85,10 @@ process diffdock_single {
     if ls ${params.diffdock_tool}/.p.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.p.npy .; fi
     if ls ${params.diffdock_tool}/.score.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.score.npy .; fi
 
-
     python -m inference --complex_name ${complex} --protein_path ${pdb_file} --ligand ${sdf_file} --out_dir ./ \
        ${params.diffdock_params}
 
-    if [ "\$(ls -A ${complex})" ]; then
-        for file in ${complex}/*
-        do
-            mv \$file ${complex}/${complex}_\$(basename \$file)
-        done
-    fi
+    for file in ${complex}/*; do mv \$file ${complex}/${complex}_\$(basename \$file); done
 
     ln -s .command.log diffdock_${complex}.log
     """
