@@ -345,13 +345,13 @@ workflow {
                            .set{ input_diffd_single }
 
                 diffdock_predictions = diffdock_single( input_diffd_single, diffd_tool.collect() )
+
                 diffdock_predictions.predictions.flatten()
                                     .filter{ it =~ /confidence/ }
                                     .set{ all_dd_predictions }
 
                 all_dd_predictions.collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
                                   .set{ for_dd_tool_scores }
-
 
                 dd_problems = Channel.empty()
             }
@@ -708,23 +708,22 @@ workflow {
             all_scores = combine_all_scores( all_scores_input.for_linking.collect() )
         }
         else {
-            ch_true = Channel.of( "True" )
-            ch_true.branch{
-                ready: it == "True"
-                other: true
-            }
-            set{ all_scores }
+            overall_ost_scores.ifEmpty( [] ).map{ [ [it], "True" ] }.map{ it[1] }
+                                            .branch{
+                                                ready: it == "True"
+                                                other: true
+                                            }
+                                            .set{ all_scores }
         }
 
-    /*
-    * error reports
-    */
+        /*
+        * error reports
+        */
 
-    ignored_tasks = catch_ignored_tasks( all_scores.ready )
-    error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList().map{ [ it, "${params.P2RANK}" ] } )
-
+        ignored_tasks = catch_ignored_tasks( all_scores.ready )
+        error_and_problems_summary( ignored_tasks.concat( ligand_prep_log, box_size_failed, p2rank_no_pocket, dd_problems ).toList().map{ [ it, "${params.P2RANK}" ] } )
     }
-    else{
+    else {
         binding_pockets.pockets.map{ receptor, csv -> [ receptor, csv.splitCsv(header:true, strip:true) ] }
                                .branch{
                                     p2rank_ok: it[1] != []

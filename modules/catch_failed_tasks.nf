@@ -5,7 +5,6 @@
 params.OUTPUT = "$launchDir/errors_and_problems"
 
 process catch_ignored_tasks {
-    publishDir "$params.OUTPUT", mode: 'copy'
 
     input:
     val (ready)
