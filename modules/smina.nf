@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/predictions/smina"
 
 process smina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    conda "${params.smina_conda}"
+    container "${params.smina_sing}"
     tag { "${complex}_${pocket_nr}" }
     
     input:
@@ -21,14 +21,15 @@ process smina {
     smina -r ${receptor_pdbqt} -l ${ligand_pdbqt} --config ${vina_box} \
           -o ${complex}_${pocket_nr}_smina.pdbqt \
           --log ${complex}_${pocket_nr}_smina.log \
-          --seed 160490 --cpu ${task.cpus} ${params.smina_params}
+          --cpu ${task.cpus} \
+          ${params.smina_params}
     """
 }
 
 
 process smina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    conda "${params.smina_conda}"
+    container "${params.smina_sing}"
     tag { "${complex}_${pocket_nr}" }
 
     input:
@@ -43,7 +44,8 @@ process smina_sdf {
     smina -r ${receptor_pdb} -l ${ligand_sdf} --config ${vina_box} \
           -o ${complex}_${pocket_nr}_smina.sdf \
           --log ${complex}_${pocket_nr}_smina.log \
-          --seed 160490 --cpu ${task.cpus} ${params.smina_params}
+          --cpu ${task.cpus} \
+          ${params.smina_params}
 
     split_pat='\$\$\$\$'
     csplit --elide-empty-files --prefix="${complex}_${pocket_nr}_smina_" --suffix-format="%d.sdf"  <(echo \$split_pat; cat "${complex}_${pocket_nr}_smina.sdf") '/\$\$\$\$/+1' "{*}"

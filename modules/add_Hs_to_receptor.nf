@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/preprocessing/receptor_Hs"
 
 process add_Hs_to_receptor {
     publishDir "$params.OUTPUT", mode: 'copy'
-    conda "${params.vina_conda}"
+    conda "${params.meeko_conda}"
     tag { receptor }
 
     input:

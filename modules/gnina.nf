@@ -21,7 +21,7 @@ process gnina {
     gnina -r ${receptor_pdbqt} -l ${ligand_pdbqt} --config ${vina_box} \
           -o ${complex}_${pocket_nr}_gnina.pdbqt \
           --log ${complex}_${pocket_nr}_gnina.log \
-          --seed 160490 ${params.gnina_params}
+          ${params.gnina_params}
     """
 }
 
@@ -43,7 +43,7 @@ process gnina_sdf {
     gnina -r ${receptor_pdb} -l ${ligand_sdf} --config ${vina_box} \
           -o ${complex}_${pocket_nr}_gnina.sdf \
           --log ${complex}_${pocket_nr}_gnina.log \
-          --seed 160490 ${params.gnina_params}
+          ${params.gnina_params}
 
     split_pat='\$\$\$\$'
     csplit --elide-empty-files --prefix="${complex}_${pocket_nr}_gnina_" --suffix-format="%d.sdf"  <(echo \$split_pat; cat "${complex}_${pocket_nr}_gnina.sdf") '/\$\$\$\$/+1' "{*}"

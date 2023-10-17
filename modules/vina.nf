@@ -56,7 +56,8 @@ process vina {
     """
     ${params.vina_tool} --receptor ${receptor_pdbqt} --ligand ${ligand_pdbqt} \
                  --config ${vina_box} --out ${complex}_${pocket_nr}_vina.pdbqt \
-                 --seed 160490 --cpu ${task.cpus} ${params.vina_params} \
+                 --cpu ${task.cpus} \
+                 ${params.vina_params} \
                  > ${complex}_${pocket_nr}_vina.log
     """
 }
