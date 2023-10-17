@@ -27,7 +27,7 @@ process ligand_preprocessing_single {
 
 
 process ligand_preprocessing_log {
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "ligand_preprocessing_*.log"
+    publishDir "$launchDir/errors_and_problems", mode: 'copy', pattern: "ligand_preprocessing_*.log"
 
     input:
     path (all_log_files)

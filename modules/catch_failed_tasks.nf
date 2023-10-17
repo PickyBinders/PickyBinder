@@ -14,7 +14,7 @@ process catch_ignored_tasks {
 
     script:
     """
-    trace_report=\$(ls -t $launchDir/pipeline_trace_*.csv | head -1)
+    trace_report=\$(ls -t $launchDir/PickyBinder_trace_report_*.csv | head -1)
     echo 'Process,Exit_status,Work_directory' > ignored_tasks_\$(basename \$trace_report)
     grep IGNORE \$trace_report | cut -d',' -f1,4,20 >> ignored_tasks_\$(basename \$trace_report) || continue
     """
