@@ -250,18 +250,27 @@ workflow {
         * ligand preprocessing
         */
 
-        // ligand preprocessing
-        sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] }.unique().groupTuple(by: [0,1]) )
+        if ( params.ligand_preprocessing == "yes" )  {
+            // ligand preprocessing
+            sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] }.unique().groupTuple(by: [0,1]) )
 
-        ligand_prep_log = ligand_preprocessing_log( sdf_for_docking.ligand_prep_log.collect() )
+            ligand_prep_log = ligand_preprocessing_log( sdf_for_docking.ligand_prep_log.collect() )
 
-        sdf_for_docking.sdf_files.flatten()
-                                 .map{ [ it.simpleName.toString().split("_preped")[0], it ] }
-                                 .combine( identifiers.map{ it[1] }, by: 0 )
-                                 .unique()
-                                 .set { ligand_tuple }
-        ligand_tuple.map{ it[1] }.set { ligand_only }
+            sdf_for_docking.sdf_files.flatten()
+                                     .map{ [ it.simpleName.toString().split("_preped")[0], it ] }
+                                     .combine( identifiers.map{ it[1] }, by: 0 )
+                                     .unique()
+                                     .set { ligand_tuple }
+            ligand_tuple.map{ it[1] }.set { ligand_only }
+        }
+        else {
+            all_input_defined.map{ [ it[1].simpleName, it[1] ] }
+                             .unique()
+                             .set { ligand_tuple }
+            ligand_tuple.map{ it[1] }.set { ligand_only }
 
+            ligand_prep_log = Channel.empty()
+        }
 
         // define box parameters for vina-like tools
         wp_coordinates = Channel.empty()
