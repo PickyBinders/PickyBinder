@@ -6,7 +6,7 @@ params.OUTPUT = "$launchDir/predictions/smina"
 
 process smina {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container "${params.smina_sing}"
+    conda "${params.smina_conda}"
     tag { "${complex}_${pocket_nr}" }
     
     input:
@@ -29,7 +29,7 @@ process smina {
 
 process smina_sdf {
     publishDir "$params.OUTPUT/${complex}/${pocket_nr}", mode: 'copy'
-    container "${params.smina_sing}"
+    conda "${params.smina_conda}"
     tag { "${complex}_${pocket_nr}" }
 
     input:
