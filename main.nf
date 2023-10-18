@@ -251,7 +251,7 @@ workflow {
         */
 
         // ligand preprocessing
-        sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] } )
+        sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] }.unique().groupTuple(by: [0,1]) )
 
         ligand_prep_log = ligand_preprocessing_log( sdf_for_docking.ligand_prep_log.collect() )
 
