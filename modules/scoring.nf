@@ -86,6 +86,66 @@ process ost_scoring {
     """
 }
 
+process ost_scoring_diffdock {
+    publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
+    container "${params.ost_sing}"
+    containerOptions "-B $baseDir/bin"
+    tag { complex }
+
+    input:
+    tuple val (complex), val (receptor), val (ligand), path (ref_receptor, stageAs: "ref/*"), path (model_receptor), path (ref_ligand), path (modelled_ligands)
+    val (tool_name)
+    
+    output:
+    tuple val (complex), val(receptor), path ("*.json"), emit: scores
+
+    script:
+    """
+    for model in ${modelled_ligands}
+    do
+        if [[ ${ref_receptor} == *.pdb ]]
+        then
+            ost compare-ligand-structures --substructure-match \
+                -m ${model_receptor} -ml \${model} -r ${ref_receptor} -rl ${ref_ligand} \
+                -o \${model%.sdf}.json \
+                --lddt-pli --rmsd \
+                || continue
+        elif [[ ${ref_receptor} == *.cif ]]
+        then
+            ost compare-ligand-structures --substructure-match \
+                -m ${model_receptor} -ml \${model} -r ${ref_receptor} \
+                -o \${model%.sdf}.json \
+                --lddt-pli --rmsd \
+                || continue
+        fi
+    done
+    """
+}
+
+
+process combine_dd_scores {
+    publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
+    container "${params.ost_sing}"
+    containerOptions "-B $baseDir/bin"
+    tag { complex }
+
+    input:
+    tuple val (complex), val(receptor), path (score_files)
+    val (tool_name)
+
+    output:
+    tuple val (complex), val (receptor), path ("*.csv"), emit: summary
+
+    script:
+    """
+    python3 $baseDir/bin/combine_ost_scores.py ${tool_name} ${complex}
+    """
+
+
+
+
+}
+
 
 process ost_score_summary {
     publishDir "$params.OUTPUT", mode: 'copy'

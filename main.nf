@@ -207,6 +207,7 @@ include { tankbind } from "./modules/tankbind"
 include { edmdock; edmdock_single } from "./modules/edmdock"
 include { pdb_to_sdf_batch as edmdock_pdb_to_sdf_batch; pdb_to_sdf_single as edmdock_pdb_to_sdf_single} from "./modules/scoring"
 include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
+include { ost_scoring_diffdock; combine_dd_scores } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
 include { catch_ignored_tasks; catch_diffdock_problems; no_box_size; error_and_problems_summary } from "./modules/catch_failed_tasks"
@@ -335,7 +336,7 @@ workflow {
                            }
                            .set{ diffd_csv }
 
-                diffdock_predictions = diffdock( diffd_csv, pdb_Hs.map{ [ it[0], it[1] ] }.flatten().filter{ it =~ /\// }.collect(), sdf_for_docking.sdf_files.collect(), diffd_tool.collect() )
+                diffdock_predictions = diffdock( diffd_csv, pdb_Hs.map{ [ it[0], it[1] ] }.flatten().filter{ it =~ /\// }.collect(), ligand_only.collect(), diffd_tool.collect() )
                 dd_problems = catch_diffdock_problems( diffdock_predictions.log )
 
                 Channel.fromPath( "$launchDir/predictions/diffdock/diffdock_predictions/*/*confidence*" ).ifEmpty( [] )
@@ -566,10 +567,15 @@ workflow {
 
             // diffdock
             if ( params.tools =~ /diffdock/ ) {
-                scoring_ref.combine( all_dd_predictions.map{ [ it.toString().split('/')[-2], it ] }.groupTuple(), by: 0 )
+
+                scoring_ref.combine( all_dd_predictions.flatten()
+                                                       .map{ [ it.toString().split('/')[-2], it ] }
+                                                       .groupTuple()
+                                                       .flatMap { complex, sdf -> sdf.collate( 8 ).collect{ [ complex, it ] } }, by: 0 )
                            .set { dd_scoring_input }
-                dd_scores = dd_ost( dd_scoring_input, Channel.value( 'diffdock' ) )
-                dd_scores.summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
+                dd_scores_json = ost_scoring_diffdock( dd_scoring_input, Channel.value( 'diffdock' ) )
+                dd_scores_summary = combine_dd_scores( dd_scores_json.transpose( by: 2 ).groupTuple( by: [0,1] ), Channel.value( 'diffdock' ) )
+                dd_scores_summary.toList().flatten().filter{ it =~ /\.csv/ }.collect().set{ dd_scores_for_summary }
             }
 
 
