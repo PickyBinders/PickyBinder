@@ -86,6 +86,7 @@ process ost_scoring {
     """
 }
 
+
 process ost_scoring_diffdock {
     publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
     container "${params.ost_sing}"
@@ -95,7 +96,7 @@ process ost_scoring_diffdock {
     input:
     tuple val (complex), val (receptor), val (ligand), path (ref_receptor, stageAs: "ref/*"), path (model_receptor), path (ref_ligand), path (modelled_ligands)
     val (tool_name)
-    
+
     output:
     tuple val (complex), val(receptor), path ("*.json"), emit: scores
 
@@ -140,10 +141,6 @@ process combine_dd_scores {
     """
     python3 $baseDir/bin/combine_ost_scores.py ${tool_name} ${complex}
     """
-
-
-
-
 }
 
 

@@ -8,7 +8,7 @@ nextflow.enable.dsl=2
  */
 
 log.info """
-PickyBinder  ~  version ${workflow.manifest.version}
+PickyBinder  ~  version v1.4
 =============================================
 
 Input data             : ${params.data}
@@ -200,14 +200,15 @@ include { p2rank } from "./modules/p2rank"
 include { calculate_boxSize } from "./modules/calculate_boxSize"
 include { docking_boxes_predicted_pockets; docking_box_defined_BS } from "./modules/docking_box"
 include { diffdock; diffdock_single } from "./modules/diffdock"
-include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf; pdbtqToSdf as smina_pdbtqToSdf; pdbtqToSdf as gnina_pdbtqToSdf } from "./modules/vina"
+include { vina_prepare_receptor; vina_prepare_ligand; vina; pdbtqToSdf as vina_pdbtqToSdf } from "./modules/vina"
 include { gnina_sdf } from "./modules/gnina"
 include { smina_sdf } from "./modules/smina"
 include { tankbind } from "./modules/tankbind"
-include { edmdock; edmdock_single } from "./modules/edmdock"
-include { pdb_to_sdf_batch as edmdock_pdb_to_sdf_batch; pdb_to_sdf_single as edmdock_pdb_to_sdf_single} from "./modules/scoring"
-include { ost_scoring as tb_ost; ost_scoring as dd_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost; ost_score_summary } from "./modules/scoring"
+include { edmdock_single } from "./modules/edmdock"
+include { pdb_to_sdf_single as edmdock_pdb_to_sdf_single} from "./modules/scoring"
+include { ost_scoring as tb_ost; ost_scoring as vina_ost; ost_scoring as smina_ost; ost_scoring as gnina_ost; ost_scoring as edm_ost } from "./modules/scoring"
 include { ost_scoring_diffdock; combine_dd_scores } from "./modules/scoring"
+include { ost_score_summary } from "./modules/scoring"
 include { ost_scoring_receptors; combine_receptors_scores } from "./modules/scoring"
 include { combine_all_scores } from "./modules/all_scores_summary"
 include { catch_ignored_tasks; catch_diffdock_problems; no_box_size; error_and_problems_summary } from "./modules/catch_failed_tasks"
