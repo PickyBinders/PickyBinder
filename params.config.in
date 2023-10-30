@@ -6,21 +6,22 @@ params {
         alphafold               = "no"
         ref_files               = "$params.data"
 
+        tools                   = "diffdock,tankbind,vina,smina,gnina"          // diffdock,tankbind,vina,smina,gnina,edmdock
+
+        // pipeline options
+        ligand_preprocessing    = "yes"         // yes, no
         receptor_Hs             = "no"          // yes, no
         p2rank_only             = "no"          // yes, no
         diffdock_mode           = "batch"       // batch, single
 
-        tools                   = "diffdock,tankbind,vina,smina,gnina,edmdock"
-
-        // scoring
         scoring_receptors       = "no"          // yes, no
         scoring_ligands         = "yes"         // yes, no
 
         // parameters
         autobox_add             = "10"
-        vina_params             = "--exhaustiveness=64"
-        smina_params            = "--exhaustiveness=64"
-        gnina_params            = "--exhaustiveness=64"
+        vina_params             = "--exhaustiveness=64 --seed 160490"
+        smina_params            = "--exhaustiveness=64 --seed 160490"
+        gnina_params            = "--exhaustiveness=64 --seed 160490"
         diffdock_params         = "--inference_steps 20 --samples_per_complex 40 --batch_size 10 --actual_steps 18 --no_final_step_noise"
 
         // tool locations
@@ -28,13 +29,14 @@ params {
         vina_tool               = "<path to vina executable>"
         p2rank_tool             = "<path to p2rank>"
         tankbind_scripts        = "$baseDir/bin/tankbind/"
-        edmdock                 = "<path to EDMDock directory>"
+        edmdock_tool            = "<path to EDMDock directory>"
 
         // conda containers
         diffdock_conda          = "<path to DiffDock conda env>"
         meeko_conda             = "<path to Meeko conda env>"
         vina_conda              = "<path to Autodock Vina conda env>"
         smina_conda             = "<path to SMINA conda env>"
+        pdbfixer_conda          = "<path to PDBFixer conda env>"
         edmdock_conda           = "<path to EDMDock conda env>"
 
         // singularity images
