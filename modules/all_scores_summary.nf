@@ -10,6 +10,7 @@ process combine_all_scores {
 
     input:
     path (all_files_with_tool_scores)
+    path (coordinates)
 
     output:
     path ("*_summary.csv"), optional: true
@@ -23,6 +24,9 @@ process combine_all_scores {
     fi
 
     combine_all_scores.py $launchDir
+
+    ligand_scoring=${params.scoring_ligands}
+    if [[ \${ligand_scoring,,} == no ]]; then rm ligand_score_summary.csv; fi
     """
 
 }

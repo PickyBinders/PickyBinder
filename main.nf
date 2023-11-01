@@ -230,7 +230,7 @@ workflow {
     */
 
     // add Hs to receptor
-    if ( params.receptor_Hs == "no" || params.receptor_Hs == "NO" || params.receptor_Hs == "No" ) {
+    if ( ("no".equalsIgnoreCase(params.receptor_Hs)) ) {
         pdb_Hs = add_Hs_to_receptor( pdb_files.unique().map{ [ it[0].simpleName, it[0], it[1] ] } )
     }
     else {
@@ -252,14 +252,13 @@ workflow {
         params.P2RANK = "no"
     }
 
-    if ( params.p2rank_only != "yes" || params.p2rank_only != "YES" || params.p2rank_only != "Yes")  {
+    if ( !("yes".equalsIgnoreCase(params.p2rank_only)) )  {
 
         /*
         * ligand preprocessing
         */
 
-        if ( params.ligand_preprocessing == "yes" || params.ligand_preprocessing == "YES" ||
-                params.ligand_preprocessing == "Yes")  {
+        if ( "yes".equalsIgnoreCase(params.ligand_preprocessing) )  {
             // ligand preprocessing
             sdf_for_docking = ligand_preprocessing_single( all_input_defined.map{ [ it[1].simpleName, it[1], it[2] ] }
                                                                             .unique()
@@ -537,23 +536,37 @@ workflow {
                                         other: true                 // no predicted pocket
                                    }
                                    .set{ p2rank_success }
+
+            // write receptors with no predicted pocket
+            p2rank_success.other.collectFile( storeDir: 'preprocessing/p2rank' ) {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
+                                .set{ p2rank_no_pocket }
+
+            // collect pocket coordinates
             p2rank_success.p2rank_ok.map{ receptor, row -> [ receptor, row.name, row.center_x, row.center_y, row.center_z ] }
                                     .transpose()
                                     .set{ predicted_coordinates }  // receptor, pocket, x, y, z
 
-            predicted_coordinates.map { it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
+            predicted_coordinates.map{ it -> "${it[0]},${it[1]},${it[2]},${it[3]},${it[4]}" }
                                  .collectFile( name: 'p2rank_summary.csv', newLine: true )
                                  .set { p2rank_summary }
 
-            p2rank_success.other.collectFile( storeDir: 'preprocessing/p2rank' ) {item -> [ "p2rank_no_pockets_found.csv", item[0] + "\n"] }
-                                .set{ p2rank_no_pocket }
+            predicted_coordinates.combine( identifiers.map{ [ it[0], it[2] ] }, by: 0 )  // receptor, pocket, x, y, z, complex
+                                 .map{ [ it[0], it[1], it[5], it[2], it[3], it[4] ] }    // receptor, pocket, complex, x, y, z
+                                 .set{ predicted_coordinates_with_complex }
         }
         else {
             p2rank_no_pocket = Channel.empty()
+            predicted_coordinates_with_complex = Channel.empty()
         }
 
+        // combine defined and predicted pocket coordinates
+        predicted_coordinates_with_complex.concat(defined_coordinates)      // receptor, pocket, complex, x, y, z
+                                          .map{ it -> "${it[2]},${it[1]},${it[3]},${it[4]},${it[5]}" }
+                                          .collectFile( name: 'all_coordinates.csv', newLine: true )
+                                          .set { all_coordinates }
+
         // scoring the modelled receptors
-        if ( params.scoring_receptors == "yes" || params.scoring_receptors == "YES" || params.scoring_receptors == "Yes" ) {
+        if ( "yes".equalsIgnoreCase(params.scoring_receptors) ) {
             receptors_scores = ost_scoring_receptors( scoring_ref.map{ [ it[1], it[3], it[4] ] }.unique() )
             receptors_scores_summary = combine_receptors_scores( receptors_scores.toList()
                                                                                  .flatten()
@@ -561,7 +574,7 @@ workflow {
                                                                                  .collect() )
         }
 
-        if ( params.scoring_ligands == "yes" || params.scoring_ligands == "YES" || params.scoring_ligands == "Yes" ) {
+        if ( "yes".equalsIgnoreCase(params.scoring_ligands) ) {
 
             // tankbind
 
@@ -784,16 +797,26 @@ workflow {
                                                 other: true
                                                 }
                                             .set{ all_scores_input }
-
-            all_scores = combine_all_scores( all_scores_input.for_linking.collect() )
+            all_scores = combine_all_scores( all_scores_input.for_linking.collect().ifEmpty( [] ), all_coordinates )
         }
-        else {
-            overall_ost_scores.ifEmpty( [] ).map{ [ [it], "True" ] }.map{ it[1] }
-                                            .branch{
-                                                ready: it == "True"
-                                                other: true
-                                            }
-                                            .set{ all_scores }
+        else if ( params.tools == /edmdock/ ) {
+            if ( "yes".equalsIgnoreCase(params.scoring_ligands) ) {
+                overall_ost_scores.ifEmpty( [] ).map{ [ [it], "True" ] }.map{ it[1] }
+                                                .branch{
+                                                    ready: it == "True"
+                                                    other: true
+                                                }
+                                                .set{ all_scores }
+            }
+            else {
+                for_edmdock_tool_scores.ifEmpty( [] ).map{ [ [it], "True" ] }.map{ it[1] }
+                                                     .branch{
+                                                        ready: it == "True"
+                                                        other: true
+                                                     }
+                                                     .set{ all_scores }
+
+            }
         }
 
         /*

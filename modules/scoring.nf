@@ -176,14 +176,20 @@ process ost_scoring_receptors {
     tag { receptor }
 
     input:
-    tuple val (receptor), path (ref_receptor), path (model_receptor)
+    tuple val (receptor), path (ref_receptor, stageAs: "ref/*"), path (model_receptor)
 
     output:
     tuple val (receptor), path ("*.json"), emit: score
 
     script:
     """
-    ost compare-structures -m ${model_receptor} -r ${ref_receptor} -o ${receptor}.json --lddt --qs-score --rigid-scores
+    if [[ ${ref_receptor} == *.pdb ]]
+    then
+        ost compare-structures -m ${model_receptor} -r ${ref_receptor} -o ${receptor}_pdbRef.json --lddt --qs-score --rigid-scores
+    elif [[ ${ref_receptor} == *.cif ]]
+    then
+        ost compare-structures -m ${model_receptor} -r ${ref_receptor} -o ${receptor}.json --lddt --qs-score --rigid-scores
+    fi
     """
 }
 

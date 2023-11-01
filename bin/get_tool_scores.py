@@ -94,7 +94,7 @@ def extract_tankbind_scores(tankbind_affinity_files):
     """
     Takes a list of tankbind affinity files and extracts the TANKBind affinity.
     :return: list of lists for each tankbind affinity file containing 'Tool', 'Complex', 'Pocket',
-             'Rank', 'TANKBind-Affinity'
+             'Rank', 'Box_Center_x', 'Box_Center_y', 'Box_Center_z', 'TANKBind-Affinity'
     """
     tb_scores = []
     for file in tankbind_affinity_files:
@@ -103,7 +103,8 @@ def extract_tankbind_scores(tankbind_affinity_files):
             next(csvreader, None)   # skip the headers
             for index, row in enumerate(csvreader):
                 tb_scores.append(
-                    ['tankbind', row[1].split('_rdkit')[0], row[2], index + 1, row[4]]
+                    ['tankbind', row[1].split('_rdkit')[0], row[2], index + 1, row[3].split(',')[0],
+                     row[3].split(',')[1], row[3].split(',')[2], row[4]]
                 )
 
     return tb_scores
