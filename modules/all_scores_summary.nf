@@ -5,7 +5,7 @@
 params.OUTPUT = "$launchDir/scores"
 
 process combine_all_scores {
-    publishDir "$params.OUTPUT", mode: 'copy'
+    publishDir "$params.OUTPUT/summary_files_$params.runID", mode: 'copy'
     conda "${params.meeko_conda}"
 
     input:

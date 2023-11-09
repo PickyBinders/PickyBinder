@@ -27,7 +27,7 @@ process ligand_preprocessing_single {
 
 
 process ligand_preprocessing_log {
-    publishDir "$launchDir/errors_and_problems", mode: 'copy', pattern: "ligand_preprocessing_*.log"
+    publishDir "$launchDir/errors_and_problems/$params.runID", mode: 'copy', pattern: "ligand_preprocessing_*.log"
 
     input:
     path (all_log_files)
@@ -37,7 +37,7 @@ process ligand_preprocessing_log {
 
     script:
     """
-    time_date=\$(date +"%y-%m-%d-%T")
+    run_name=${params.timestamp}
 
     echo -e "**************\nLigand preparation failed:" > log.txt
     grep -h -A1 'Ligand preparation failed:' *_ligand_preprocessing.log --no-group-separator | grep -v 'Ligand preparation failed:' | tr -s '\n' >> log.txt
@@ -50,6 +50,6 @@ process ligand_preprocessing_log {
     echo -e "\n**************\nWarnings:" >> log.txt
     grep -h -A1 'Warnings:' *_ligand_preprocessing.log --no-group-separator | grep -v 'Warnings:' | tr -s '\n' >> log.txt
     echo -e "\n" >> log.txt
-    mv log.txt ligand_preprocessing_\${time_date}.log
+    mv log.txt ligand_preprocessing_\${run_name}.log
     """
 }

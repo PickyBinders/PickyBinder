@@ -21,8 +21,8 @@ process pdb_to_sdf_batch {
     """
     python3 $baseDir/bin/pdb_to_sdf.py ${prediction_pdb}
 
-    time_date=\$(date +"%y-%m-%d-%T")
-    ln -s .command.log pdb_to_sdf_\${time_date}.log
+    run_name=${params.timestamp}
+    ln -s .command.log pdb_to_sdf_\${run_name}.log
     """
 }
 
@@ -145,7 +145,7 @@ process combine_dd_scores {
 
 
 process ost_score_summary {
-    publishDir "$params.OUTPUT", mode: 'copy'
+    publishDir "$params.OUTPUT/summary_files_$params.runID", mode: 'copy'
 
     input:
     path (scores)
@@ -155,16 +155,10 @@ process ost_score_summary {
 
     script:
     """
-    if [[ ! -f $launchDir/scores/ligand_score_summary.csv ]]
-    then
-        echo 'Tool,Complex,Pocket,Rank,lDDT-PLI,lDDT-LP,BiSyRMSD,Reference_Ligand,Box_Center_x,Box_Center_y,Box_Center_z' > score_summary.csv
-        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
-    else
-        cp $launchDir/scores/ligand_score_summary.csv score_summary.csv
-        grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> score_summary.csv
-    fi
+    echo 'Tool,Complex,Pocket,Rank,lDDT-PLI,lDDT-LP,BiSyRMSD,Reference_Ligand,Box_Center_x,Box_Center_y,Box_Center_z' > summary.csv
+    grep -v 'Tool' *_score_summary.csv | cut -d':' -f2 >> summary.csv
 
-    (head -n 1 score_summary.csv && tail -n +2 score_summary.csv | sort) | uniq > ligand_score_summary.csv
+    mv summary.csv ligand_score_summary.csv
     """
 }
 
@@ -195,7 +189,7 @@ process ost_scoring_receptors {
 
 
 process combine_receptors_scores {
-    publishDir "$params.OUTPUT", mode: 'copy'
+    publishDir "$params.OUTPUT/summary_files_$params.runID", mode: 'copy'
 
     input:
     path (scores)

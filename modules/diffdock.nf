@@ -24,7 +24,7 @@ process diffdock {
 
     script:
     """
-    time_date=\$(date +"%y-%m-%d-%T")
+    run_name=${params.timestamp}
 
     if ls ${params.diffdock_tool}/.so3* 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.so3* .; fi
     if ls ${params.diffdock_tool}/.p.npy 1> /dev/null 2>&1; then ln -s ${params.diffdock_tool}/.p.npy .; fi
@@ -55,12 +55,12 @@ process diffdock {
                 done
              fi
         done
-        mv protein_ligand_withHeader.csv protein_ligand_csv_\${time_date}.csv
+        mv protein_ligand_withHeader.csv protein_ligand_csv_\${run_name}.csv
     else
         echo "There are no complexes to dock"
     fi
 
-    ln -s .command.log diffdock_\${time_date}.log
+    ln -s .command.log diffdock_\${run_name}.log
     """
 }
 

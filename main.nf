@@ -11,6 +11,8 @@ log.info """
 PickyBinder  ~  version v1.4
 =============================================
 
+RunID                  : ${params.runID}
+
 Input data             : ${params.data}
 Reference files        : ${params.ref_files}
 
@@ -357,7 +359,7 @@ workflow {
                        .unique()
                        .set{ all_dd_predictions }
 
-                all_dd_predictions.collectFile() {item -> [ "dd_file_names.txt", item.name + "\n" ] }
+                all_dd_predictions.collectFile() { item -> [ "dd_file_names.txt", item.name + "\n" ] }
                                   .set{ for_dd_tool_scores }
             }
             else if ( params.diffdock_mode == "single" ) {
@@ -402,7 +404,12 @@ workflow {
 
             vina_out = vina( vina_input )
             vina_sdf = vina_pdbtqToSdf( vina_out.vina_result, Channel.value( 'vina' ) )
-            vina_sdf.map{ it[3] }.collect().set{ for_vina_tool_scores }
+            //vina_sdf.map{ it[3] }.collect().set{ for_vina_tool_scores }
+
+            vina_sdf.map{ it[3] }.collect()
+                                 .flatten()
+                                 .collectFile() { item -> [ "vina_prediction_files.txt", item.toString() + "\n" ] }
+                                 .set{ for_vina_tool_scores }
         }
         else {
             vina_scores_for_summary = Channel.empty()
@@ -430,7 +437,11 @@ workflow {
 
         if ( params.tools =~ /smina/ ) {
             smina_out = smina_sdf( smi_gni_input )
-            smina_out.smina_sdf.map{ it[3] }.collect().set{ for_smina_tool_scores }
+            //smina_out.smina_sdf.map{ it[3] }.collect().set{ for_smina_tool_scores }
+            smina_out.smina_sdf.map{ it[3] }.collect()
+                                            .flatten()
+                                            .collectFile() { item -> [ "smina_prediction_files.txt", item.toString() + "\n" ] }
+                                            .set{ for_smina_tool_scores }
         }
         else {
             smina_scores_for_summary = Channel.empty()
@@ -444,7 +455,11 @@ workflow {
 
         if ( params.tools =~ /gnina/ ) {
             gnina_out = gnina_sdf( smi_gni_input )
-            gnina_out.gnina_sdf.map{ it[3] }.collect().set{ for_gnina_tool_scores }
+            //gnina_out.gnina_sdf.map{ it[3] }.collect().set{ for_gnina_tool_scores }
+            gnina_out.gnina_sdf.map{ it[3] }.collect()
+                                            .flatten()
+                                            .collectFile() { item -> [ "gnina_prediction_files.txt", item.toString() + "\n" ] }
+                                            .set{ for_gnina_tool_scores }
         }
         else {
             gnina_scores_for_summary = Channel.empty()
@@ -463,7 +478,10 @@ workflow {
                        .set{ tankbind_input }
 
             tankbind_out = tankbind( tankbind_input )
-            tankbind_out.affinities.map{ it[2] }.collect().set{ for_tb_tool_scores }
+            tankbind_out.affinities.map{ it[2] }.collect()
+                                                .flatten()
+                                                .collectFile() { item -> [ "tb_prediction_files.txt", item.toString() + "\n" ] }
+                                                .set{ for_tb_tool_scores }
         }
         else {
             tb_scores_for_summary = Channel.empty()
@@ -489,7 +507,10 @@ workflow {
             // single sample version
             edmdock_out = edmdock_single( edm_dock_input, edmdock_tool.collect() )
             edmdock_sdfs = edmdock_pdb_to_sdf_single( edmdock_out.map{ [ it[0], it[1], it[3] ] }, "predictions/edmdock/sdf_files" )
-            for_edmdock_tool_scores = edmdock_sdfs.collect()
+            edmdock_sdfs.collect()
+                        .flatten()
+                        .collectFile() { item -> [ "edmdock_prediction_files.txt", item.toString() + "\n" ] }
+                        .set{ for_edmdock_tool_scores }
         }
         else {
             edmdock_scores_for_summary = Channel.empty()
@@ -792,12 +813,14 @@ workflow {
                                             .combine( for_gnina_tool_scores.ifEmpty( [] )
                                             .combine( for_edmdock_tool_scores.ifEmpty( [] ) ))))))
                                             .flatten()
-                                            .branch{
-                                                for_linking: it.name == 'ligand_score_summary.csv' || it.name == 'dd_file_names.txt'
-                                                other: true
-                                                }
+                                            //.branch{
+                                            //    for_linking: it.name == 'ligand_score_summary.csv' || it.name == 'dd_file_names.txt'
+                                            //    other: true
+                                            //    }
                                             .set{ all_scores_input }
-            all_scores = combine_all_scores( all_scores_input.for_linking.collect().ifEmpty( [] ), all_coordinates )
+
+            //all_scores = combine_all_scores( all_scores_input.for_linking.collect().ifEmpty( [] ), all_coordinates )
+            all_scores = combine_all_scores( all_scores_input.collect().ifEmpty( [] ), all_coordinates )
         }
         else if ( params.tools == /edmdock/ ) {
             if ( "yes".equalsIgnoreCase(params.scoring_ligands) ) {

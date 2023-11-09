@@ -40,9 +40,12 @@ pocket_coordinates['Box_Center_y'] = pocket_coordinates['Box_Center_y'].astype(s
 pocket_coordinates['Box_Center_z'] = pocket_coordinates['Box_Center_z'].astype(str)
 
 # Tankbind
-tankbind_files = [f for f in glob.glob(launchdir + '/predictions/tankbind/*/*_tankbind.csv')]
+tankbind_file = 'tb_prediction_files.txt'
 
-if tankbind_files:
+if os.path.exists(tankbind_file):
+    with open(tankbind_file) as f:
+        tankbind_files = [line.rstrip() for line in f]
+
     tankbind_scores_list = extract_tankbind_scores(tankbind_files)
     tankbind_scores = pd.DataFrame(
         tankbind_scores_list,
@@ -60,6 +63,7 @@ if tankbind_files:
     # remove empty columns
     tb_summary['Rank'] = tb_summary['Rank'].fillna(0).astype(int).astype(str)
     tb_summary = tb_summary.dropna(how='all', axis=1)
+    tb_summary = tb_summary.sort_values(['Complex', 'Pocket', 'Rank'])
     tb_summary.to_csv('tankbind_summary.csv', index=False)
 
 # Diffdock
@@ -80,11 +84,16 @@ if os.path.exists(diffdock_file):
 
     # remove empty columns
     dd_summary = dd_summary.dropna(how='all', axis=1)
+    dd_summary = dd_summary.sort_values(['Complex', 'Rank'])
     dd_summary.to_csv('diffdock_summary.csv', index=False)
 
 # Vina
-vina_sdfs = [f for f in glob.glob(launchdir + '/predictions/vina/vina_predictions/*/*/*_vina_*.sdf')]
-if vina_sdfs:
+vina_file = 'vina_prediction_files.txt'
+
+if os.path.exists(vina_file):
+    with open(vina_file) as f:
+        vina_sdfs = [line.rstrip() for line in f]
+
     vina_scores_list = extract_vina_scores(vina_sdfs)
     vina_scores = pd.DataFrame(
         vina_scores_list,
@@ -102,11 +111,16 @@ if vina_sdfs:
 
     # remove empty columns
     vina_summary = vina_summary.dropna(how='all', axis=1)
+    vina_summary = vina_summary.sort_values(['Complex', 'Pocket', 'Rank'])
     vina_summary.to_csv('vina_summary.csv', index=False)
 
 # SMINA
-smina_sdfs = [f for f in glob.glob(launchdir + '/predictions/smina/*/*/*_smina_*.sdf')]
-if smina_sdfs:
+smina_file = 'smina_prediction_files.txt'
+
+if os.path.exists(smina_file):
+    with open(smina_file) as f:
+        smina_sdfs = [line.rstrip() for line in f]
+
     smina_scores_list = extract_smina_scores(smina_sdfs)
     smina_scores = pd.DataFrame(
         smina_scores_list,
@@ -122,11 +136,17 @@ if smina_sdfs:
 
     # remove empty columns
     smina_summary = smina_summary.dropna(how='all', axis=1)
+    smina_summary = smina_summary.sort_values(['Complex', 'Pocket', 'Rank'])
     smina_summary.to_csv('smina_summary.csv', index=False)
 
 # GNINA
 gnina_sdfs = [f for f in glob.glob(launchdir + '/predictions/gnina/*/*/*_gnina_*.sdf')]
-if gnina_sdfs:
+gnina_file = 'gnina_prediction_files.txt'
+
+if os.path.exists(gnina_file):
+    with open(gnina_file) as f:
+        gnina_sdfs = [line.rstrip() for line in f]
+
     gnina_scores_list = extract_gnina_scores(gnina_sdfs)
     gnina_scores = pd.DataFrame(
         gnina_scores_list,
@@ -143,4 +163,5 @@ if gnina_sdfs:
 
     # remove empty columns
     gnina_summary = gnina_summary.dropna(how='all', axis=1)
+    gnina_summary = gnina_summary.sort_values(['Complex', 'Pocket', 'Rank'])
     gnina_summary.to_csv('gnina_summary.csv', index=False)

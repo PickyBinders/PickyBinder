@@ -257,9 +257,6 @@ Workflow options:
 All workflow options can either be defined in the params.config file or by feeding the parameters via command line. 
 Arguments on the command line overwrite the pre-definded arguments in the params.config file.
 
---tools arg                 comma-separated list of the docking tools to run 
-                                default: diffdock,tankbind,vina,smina,gnina
-
 Input:
 ------
 --data arg                  <input>.csv, <path_to_pdb-sdf-files>, or <path_to_pdb-files>,<path_to_sdf-files>                           
@@ -268,19 +265,29 @@ Input:
 --alphafold arg             are the receptors AlphaFold modelled structures: no (default), yes 
                             (not used when giving a csv with the input definition)                                              
 
-Preprocessing:
---------------
---ligand_preprocessing arg  perform ligand preprocessing: yes (default), no     
---receptor_Hs arg           are the input receptors protonated: no (default), yes
-
 Workflow scopes:
 ----------------                            
+--runID arg                 default: workflow start time (changes for each run of the pipeline, also with -resume)
+                                summary files will get overriden with the results for the actual input data 
+                                when using -resume with the same runID 
+
+--tools arg                 comma-separated list of the docking tools to run 
+                                default: diffdock,tankbind,vina,smina,gnina
+
+Preprocessing:
+--ligand_preprocessing arg  perform ligand preprocessing: yes (default), no 
+                                ligand_preprocessing 'no' requires sdf files as ligand input format
+--receptor_Hs arg           are the input receptors protonated: no (default), yes
+
+Binding site prediction:
 --p2rank_only arg           run only P2Rank ligand-binding site prediction: no (default), yes
+
+Scoring:
 --scoring_receptors arg     Compares the receptor structure to the reference using OpenStructure: 
                                 no (default), yes (lDDT, RMSD, and QS-score)
 --scoring_ligands arg       Scoring ligand prediction using OpenStructure (lDDT-PLI, lDDT-LP, BiSyRMSD):
                                 yes (default), no                                                   
-
+                                                                
 Tool parameters:
 -----------------
 To change the paramaters of the individual tools provide a blank-space separated list of options.
@@ -294,7 +301,6 @@ Other options:
 --------------
 --autobox_add arg           amount of buffer space to add on each side of the binding box (default 10)
 --diffdock_mode arg         running DiffDock in batch or single mode: batch (default), single
-
 ```
 
 ## Outputs

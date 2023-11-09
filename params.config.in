@@ -1,4 +1,9 @@
+import java.time.*
+Date now = new Date()
+params.timestamp = now.format("yyyyMMdd-HH:mm:ss")
+
 params {
+        runID                   = now.format("yyyyMMdd-HH:mm:ss")
 
         // input
         data                    = ""

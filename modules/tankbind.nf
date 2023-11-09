@@ -7,7 +7,7 @@ params.OUTPUT = "$launchDir/predictions/tankbind"
 process tankbind {
     publishDir "$params.OUTPUT/${complex}", pattern: "tankbind_predictions/*", mode: 'copy'
     publishDir "$params.OUTPUT/${complex}", pattern: "*_tankbind.csv", mode: 'copy'
-    publishDir "$params.OUTPUT", mode: 'copy', pattern: "tankbind_*.log"
+    publishDir "$params.OUTPUT/${complex}", mode: 'copy', pattern: "tankbind_*.log"
     container "${params.tankbind_sing}"
     containerOptions "-B ${params.tankbind_scripts}"
     tag { complex }
@@ -24,7 +24,6 @@ process tankbind {
     """
     tankbind_prediction.py ${params.tankbind_scripts} ${complex} ${receptor} ${pdb_Hs} ${ligand} ${ligand_sdf} ${p2rank_prediction}
 
-    time_date=\$(date +"%y-%m-%d-%T")
-    ln -s .command.log tankbind_\${time_date}.log
+    ln -s .command.log tankbind_${complex}.log
     """
 }
