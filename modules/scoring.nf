@@ -47,6 +47,50 @@ process pdb_to_sdf_single {
 }
 
 
+process ost_scoring_single {
+    publishDir "$params.OUTPUT/ligands/", mode: 'copy'
+    container "${params.ost_sing}"
+    containerOptions "-B $baseDir/bin"
+    tag { complex }
+
+    input:
+    tuple val (complex), val (receptor), val (ligand), path (ref_receptor, stageAs: "ref/*"), path (model_receptor), path (model_ligand)
+
+    output:
+    tuple val (complex), path ("*.json"), emit: score
+
+    script:
+    """
+    ost compare-ligand-structures --substructure-match \
+        -m ${model_receptor} -ml ${model_ligand} -r ${ref_receptor} \
+        -o ${complex}.json \
+        --lddt-pli --rmsd
+    """
+}
+
+
+process ost_scoring_single_summary {
+    publishDir "$params.OUTPUT", mode: 'copy'
+    //container "${params.ost_sing}"
+    //containerOptions "-B $baseDir/bin"
+    tag { complex }
+
+    input:
+    path (scores)
+
+    output:
+    path ("*.csv"), emit: score_summary
+
+    script:
+    """
+    source /scicore/home/schwede/leeman0000/activate-ost-develop
+
+    python3 $baseDir/bin/single_ost_scores_summary.py
+    """
+}
+
+
+
 process ost_scoring {
     publishDir "$params.OUTPUT/ligands/${complex}/${tool_name}", mode: 'copy'
     container "${params.ost_sing}"
