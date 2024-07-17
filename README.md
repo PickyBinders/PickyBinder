@@ -36,6 +36,17 @@ Upon successful completion, the **report.html** is generated, providing graphica
 about each process.
 
 
+# Table of contents
+
+* [Dependencies](#Dependencies)
+* [Input](#Input)
+* [Running the workflow](#Running the workflow)
+* [Outputs](#Outputs)
+* [Failing tasks and problems](#Failing tasks and problems)
+* [Scoring only](#Scoring only)
+* [Citations](#Citations)
+
+
 ## Dependencies
 
 Download the PickyBinder GitHub repository and unzip the **reduce_wwPDB_het_dict.txt.gz** file. 
@@ -320,6 +331,30 @@ the task, check out the **pipeline_trace** file.
 Additionally, the **errors_and_problems** directory provides an overview of encountered errors and issues during 
 the pipeline run.
 
+
+## Scoring only
+
+There is also the option to only do scoring using OpenStructure. For this purpose a csv file with all the poses
+to be scored needs to be provided.
+
+The csv file needs to have a header row with the following column names: 
+**complex_name,receptor,ligand,reference** 
+
+| Column       |                         Content                                | Description                                                                                                                                                 |
+|:-------------|:---------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| complex_name | name used to save score files                                  | Unique identifier for a receptor-ligand pair <br/> if empty the file names of the receptor and the ligand will be combined                                  |
+| receptor     | full path to the receptor pdb file                             | pdb file used for the protein ligand interaction prediction                                                                                                 |
+| ligand       | full path to the sdf file with the predicted pose              | sdf file with the predicted pose, only one pose per file <br/> file name must be of the form **ligandName_poseNumber**                                      |
+| reference    | full path to the reference file for scoring                    | provide either a mmCIF or a pdb file; <br/> Put `-` to use the receptor pdb file as the receptor reference and the ligand sdf file as the ligand reference. |
+
+
+- Run the scoring
+
+```
+nextflow run scoring_only.nf -profile slurm --data poses_to_score.csv
+```
+
+This will generate a summary file with all the poses located in the scores directory. 
 
 ## Citations
 

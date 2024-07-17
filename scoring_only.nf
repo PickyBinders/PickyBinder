@@ -26,7 +26,7 @@ Input data             : ${params.data}
 Channel
     .fromPath(params.data)
     .splitCsv(header:true)
-    .map{ row-> tuple(file(row.receptor_path), file(row.ligand_path_sdf), file(row.reference_path), row.complex_name ) }
+    .map{ row-> tuple(file(row.receptor), file(row.ligand), file(row.reference), row.complex_name ) }
     .branch{
         with_complex_name: it[3] != '' && it[3] != '-'
         other: true
