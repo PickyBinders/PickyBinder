@@ -40,10 +40,10 @@ about each process.
 
 * [Dependencies](#Dependencies)
 * [Input](#Input)
-* [Running the workflow](#Running the workflow)
+* [Running the workflow](#Running-the-workflow)
 * [Outputs](#Outputs)
-* [Failing tasks and problems](#Failing tasks and problems)
-* [Scoring only](#Scoring only)
+* [Failing tasks and problems](#Failing-tasks-and-problems)
+* [Scoring only](#Scoring-only)
 * [Citations](#Citations)
 
 
